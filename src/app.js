@@ -42,6 +42,13 @@ import expenseRoutes from './modules/expenses/expense.routes.js';
 import reportRoutes from './modules/reports/report.routes.js';
 import dashboardRoutes from './modules/dashboard/dashboard.routes.js';
 import settingsRoutes from './modules/settings/settings.routes.js';
+import customerAuthRoutes from './modules/customerAuth/customerAuth.routes.js';
+import customerProfileRoutes from './modules/customerProfile/customerProfile.routes.js';
+import customerCartRoutes from './modules/customerCart/customerCart.routes.js';
+import customerProductRoutes from './modules/customerProducts/customerProduct.routes.js';
+import customerOrderRoutes from './modules/customerOrders/customerOrder.customer.routes.js';
+import staffOrderRoutes from './modules/customerOrders/customerOrder.staff.routes.js';
+import customerNotificationRoutes from './modules/customerNotifications/customerNotification.routes.js';
 
 // TODO: replace with the real value once package.json / a build-info
 // module exists — hardcoded for now per the exact health-check contract requested.
@@ -152,6 +159,13 @@ app.use(`/api/${env.API_VERSION}/expenses`, expenseRoutes);
 app.use(`/api/${env.API_VERSION}/reports`, reportRoutes);
 app.use(`/api/${env.API_VERSION}/dashboard`, dashboardRoutes);
 app.use(`/api/${env.API_VERSION}/settings`, settingsRoutes);
+app.use(`/api/${env.API_VERSION}/customer-auth`, customerAuthRoutes);
+app.use(`/api/${env.API_VERSION}/customer`, customerProfileRoutes);
+app.use(`/api/${env.API_VERSION}/customer`, customerProductRoutes);
+app.use(`/api/${env.API_VERSION}/customer/cart`, customerCartRoutes);
+app.use(`/api/${env.API_VERSION}/customer/orders`, customerOrderRoutes);
+app.use(`/api/${env.API_VERSION}/customer/notifications`, customerNotificationRoutes);
+app.use(`/api/${env.API_VERSION}/orders`, staffOrderRoutes);
 
 // ---------------------------------------------------------------------------
 // 404 handler — must come after all real routes, before the error middleware.
