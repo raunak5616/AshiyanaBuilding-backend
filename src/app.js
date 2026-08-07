@@ -66,9 +66,20 @@ if (isProduction) {
 // Security & core middleware
 // ---------------------------------------------------------------------------
 app.use(helmet());
+const allowedOrigins = env.CLIENT_URL.split(',').map((url) => url.trim());
 app.use(
   cors({
-    origin: env.CLIENT_URL,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like native mobile apps, curl, postman)
+      if (!origin) {
+        return callback(null, true);
+      }
+      if (!isProduction || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true, // required so the browser sends/receives the httpOnly refresh-token cookie
   }),
 );

@@ -148,8 +148,43 @@ const customerSchema = new Schema(
 );
 
 customerSchema.index({ shopId: 1, customerCode: 1 }, { unique: true });
-customerSchema.index({ shopId: 1, gstNumber: 1 }, { unique: true, sparse: true });
-customerSchema.index({ shopId: 1, panNumber: 1 }, { unique: true, sparse: true });
+
+// Partial unique index for gstNumber (only unique if it exists and is a string)
+customerSchema.index(
+  { shopId: 1, gstNumber: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      gstNumber: {
+        $exists: true,
+        $nin: ["", null]
+      }
+    },
+  }
+);
+
+// Partial unique index for panNumber (only unique if it exists and is a string)
+customerSchema.index(
+  { shopId: 1, panNumber: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      panNumber: { $type: 'string' },
+    },
+  }
+);
+
+// Partial unique index for phone (only unique if it exists and is a string)
+customerSchema.index(
+  { shopId: 1, phone: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      phone: { $type: 'string' },
+    },
+  }
+);
+
 customerSchema.index({ shopId: 1, isActive: 1 });
 
 export const Customer = mongoose.model('Customer', customerSchema);

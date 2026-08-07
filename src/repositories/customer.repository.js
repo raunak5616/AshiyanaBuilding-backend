@@ -40,6 +40,10 @@ class CustomerRepository extends BaseRepository {
   async findByPanNumber(shopId, panNumber) {
     return this.findOne({ shopId, panNumber: panNumber.toUpperCase() });
   }
+
+  async findByPhone(shopId, phone) {
+    return this.findOne({ shopId, phone });
+  }
 }
 
 export const customerRepository = new CustomerRepository();

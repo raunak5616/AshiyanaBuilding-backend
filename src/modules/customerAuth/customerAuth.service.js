@@ -88,7 +88,17 @@ const generateUniqueCustomerCode = async (shopId) => {
 };
 
 const signup = async (payload, meta) => {
-  const { shopId, fullName, email, phone, password } = payload;
+  const {
+    shopId = '60b9f15c7c2b5d4e6f8a9b1c',
+    fullName,
+    email,
+    phone,
+    password,
+    customerType = 'individual',
+    businessName,
+    gstNumber,
+    address,
+  } = payload;
 
   // 1. Check if email or phone is already registered as a CustomerUser in this shop
   const existingEmail = await customerUserRepository.findByEmail(shopId, email);
@@ -99,6 +109,14 @@ const signup = async (payload, meta) => {
   const existingPhone = await customerUserRepository.findByPhone(shopId, phone);
   if (existingPhone) {
     throw ApiError.conflict('Phone number is already registered', 'PHONE_ALREADY_REGISTERED');
+  }
+
+  // Check for duplicate GST if registering as a business
+  if (customerType === 'business' && gstNumber) {
+    const existingGst = await customerRepository.findByGstNumber(shopId, gstNumber);
+    if (existingGst) {
+      throw ApiError.conflict('GST number is already registered', 'GST_ALREADY_REGISTERED');
+    }
   }
 
   const session = await mongoose.startSession();
@@ -120,15 +138,27 @@ const signup = async (payload, meta) => {
             {
               shopId,
               customerCode,
-              customerType: 'individual',
+              customerType,
+              businessName: customerType === 'business' ? businessName : '',
               customerName: fullName,
               email: email.toLowerCase(),
               phone,
+              gstNumber: customerType === 'business' ? gstNumber : undefined,
+              address: customerType === 'business' ? address : '',
             },
           ],
           { session }
         );
         customerMaster = newCustomer;
+      } else if (customerType === 'business' && customerMaster.customerType === 'individual') {
+        // Upgrade existing individual customer to business/selling customer
+        customerMaster.customerType = 'business';
+        customerMaster.businessName = businessName;
+        customerMaster.gstNumber = gstNumber;
+        if (address) {
+          customerMaster.address = address;
+        }
+        await customerMaster.save({ session });
       }
 
       // 4. Create the CustomerUser account and link it to the Customer master record
@@ -252,7 +282,7 @@ const logout = async (rawRefreshToken) => {
 };
 
 const forgotPassword = async (payload) => {
-  const { shopId, email } = payload;
+  const { shopId = '60b9f15c7c2b5d4e6f8a9b1c', email } = payload;
   const customerUser = await customerUserRepository.findByEmail(shopId, email);
 
   if (!customerUser || !customerUser.isActive) {

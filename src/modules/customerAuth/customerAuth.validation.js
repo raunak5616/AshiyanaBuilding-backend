@@ -11,13 +11,54 @@ const passwordSchema = z
   .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character');
 
 export const customerSignupSchema = {
-  body: z.object({
-    shopId: objectIdSchema,
-    fullName: z.string().trim().min(2, 'Full name is required'),
-    email: z.string().trim().email('Invalid email address'),
-    phone: z.string().trim().min(10, 'Phone number must be at least 10 digits'),
-    password: passwordSchema,
-  }),
+  body: z
+    .object({
+      shopId: objectIdSchema.optional(),
+      fullName: z.string().trim().min(2, 'Full name is required'),
+      email: z.string().trim().email('Invalid email address'),
+      phone: z.string().trim().min(10, 'Phone number must be at least 10 digits'),
+      password: passwordSchema,
+      customerType: z.enum(['individual', 'business']).default('individual'),
+      businessName: z.string().trim().optional(),
+      gstNumber: z.string().trim().optional(),
+      address: z.string().trim().optional(),
+    })
+    .refine(
+      (data) => {
+        if (data.customerType === 'business') {
+          return !!data.businessName && data.businessName.length >= 2;
+        }
+        return true;
+      },
+      {
+        message: 'Shop name is required for selling accounts',
+        path: ['businessName'],
+      }
+    )
+    .refine(
+      (data) => {
+        if (data.customerType === 'business') {
+          return !!data.gstNumber && data.gstNumber.length >= 15;
+        }
+        return true;
+      },
+      {
+        message: 'GST number is required and must be at least 15 characters',
+        path: ['gstNumber'],
+      }
+    )
+    .refine(
+      (data) => {
+        if (data.customerType === 'business') {
+          return !!data.address && data.address.length >= 5;
+        }
+        return true;
+      },
+      {
+        message: 'Address is required for selling accounts',
+        path: ['address'],
+      }
+    ),
 };
 
 export const customerLoginSchema = {
@@ -36,7 +77,7 @@ export const customerLoginSchema = {
 
 export const customerForgotPasswordSchema = {
   body: z.object({
-    shopId: objectIdSchema,
+    shopId: objectIdSchema.optional(),
     email: z.string().trim().email('Invalid email address'),
   }),
 };

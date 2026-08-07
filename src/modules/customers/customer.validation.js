@@ -21,14 +21,16 @@ const gstNumberSchema = z
   .trim()
   .transform((val) => val.toUpperCase())
   .refine((val) => gstRegex.test(val), 'Invalid GST number format')
-  .optional();
+  .optional()
+  .or(z.literal('').transform(() => undefined));
 
 const panNumberSchema = z
   .string()
   .trim()
   .transform((val) => val.toUpperCase())
   .refine((val) => panRegex.test(val), 'Invalid PAN format')
-  .optional();
+  .optional()
+  .or(z.literal('').transform(() => undefined));
 
 const withGstPanConsistency = (schema) =>
   schema.refine(
@@ -59,6 +61,22 @@ const withBusinessNameRequiredForBusinessType = (schema) =>
     },
   );
 
+/**
+ * gstNumber is conditionally required only when customerType is
+ * 'business' — enforced here via Zod refine for B2B customers.
+ */
+const withGstRequiredForBusinessType = (schema) =>
+  schema.refine(
+    (data) => {
+      if (data.customerType !== 'business') return true;
+      return Boolean(data.gstNumber && data.gstNumber.trim().length > 0);
+    },
+    {
+      message: 'gstNumber is required when customerType is "business"',
+      path: ['gstNumber'],
+    },
+  );
+
 const isActiveQueryTransform = z
   .enum(['true', 'false'])
   .optional()
@@ -67,7 +85,7 @@ const isActiveQueryTransform = z
 const baseCustomerFields = {
   businessName: z.string().trim().optional(),
   email: z.string().trim().email('Invalid email').optional().or(z.literal('')),
-  phone: z.string().trim().optional(),
+  phone: z.string().trim().optional().or(z.literal('').transform(() => undefined)),
   alternatePhone: z.string().trim().optional(),
   gstNumber: gstNumberSchema,
   panNumber: panNumberSchema,
@@ -86,15 +104,17 @@ const baseCustomerFields = {
 
 export const createCustomerSchema = {
   body: withBusinessNameRequiredForBusinessType(
-    withGstPanConsistency(
-      z.object({
-        customerCode: z.string().trim().min(1, 'Customer code is required').max(32),
-        customerType: z.enum(['individual', 'business'], {
-          errorMap: () => ({ message: 'customerType must be either "individual" or "business"' }),
+    withGstRequiredForBusinessType(
+      withGstPanConsistency(
+        z.object({
+          customerCode: z.string().trim().min(1, 'Customer code is required').max(32),
+          customerType: z.enum(['individual', 'business'], {
+            errorMap: () => ({ message: 'customerType must be either "individual" or "business"' }),
+          }),
+          customerName: z.string().trim().min(1, 'Customer name is required'),
+          ...baseCustomerFields,
         }),
-        customerName: z.string().trim().min(1, 'Customer name is required'),
-        ...baseCustomerFields,
-      }),
+      ),
     ),
   ),
 };

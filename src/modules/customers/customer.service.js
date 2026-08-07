@@ -44,6 +44,10 @@ const createCustomer = async (shopId, actingUser, payload) => {
   const existingCode = await customerRepository.findByCustomerCode(shopId, payload.customerCode);
   if (existingCode) throw ApiError.conflict('Customer code is already in use', 'DUPLICATE_CUSTOMER_CODE');
 
+  if (payload.phone) {
+    const existingPhone = await customerRepository.findByPhone(shopId, payload.phone);
+    if (existingPhone) throw ApiError.conflict('Phone number is already in use', 'DUPLICATE_PHONE_NUMBER');
+  }
   if (payload.gstNumber) {
     const existingGst = await customerRepository.findByGstNumber(shopId, payload.gstNumber);
     if (existingGst) throw ApiError.conflict('GST number is already in use', 'DUPLICATE_GST_NUMBER');
@@ -104,9 +108,21 @@ const updateCustomer = async (shopId, actingUser, customerId, payload) => {
     );
   }
 
+  const effectiveGstNumber = payload.gstNumber ?? before.gstNumber;
+  if (effectiveType === 'business' && !(effectiveGstNumber && effectiveGstNumber.trim())) {
+    throw ApiError.badRequest(
+      'gstNumber is required when customerType is "business"',
+      'GST_NUMBER_REQUIRED',
+    );
+  }
+
   if (payload.customerCode && payload.customerCode.toUpperCase() !== before.customerCode) {
     const existing = await customerRepository.findByCustomerCode(shopId, payload.customerCode);
     if (existing) throw ApiError.conflict('Customer code is already in use', 'DUPLICATE_CUSTOMER_CODE');
+  }
+  if (payload.phone && payload.phone !== before.phone) {
+    const existing = await customerRepository.findByPhone(shopId, payload.phone);
+    if (existing) throw ApiError.conflict('Phone number is already in use', 'DUPLICATE_PHONE_NUMBER');
   }
   if (payload.gstNumber && payload.gstNumber !== before.gstNumber) {
     const existing = await customerRepository.findByGstNumber(shopId, payload.gstNumber);

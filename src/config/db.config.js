@@ -14,6 +14,33 @@ import { env, isProduction } from './env.config.js';
 // catches bugs early where a typo'd field would otherwise be ignored.
 mongoose.set('strictQuery', true);
 
+// Monkey-patch mongoose.startSession to support standalone MongoDB instances by falling back
+// to executing transaction callbacks without transactions if replica sets are not configured.
+const originalStartSession = mongoose.startSession;
+mongoose.startSession = async function (...args) {
+  const session = await originalStartSession.apply(this, args);
+  const originalWithTransaction = session.withTransaction;
+
+  session.withTransaction = async function (fn, ...transactionArgs) {
+    try {
+      return await originalWithTransaction.call(session, fn, ...transactionArgs);
+    } catch (error) {
+      const isStandaloneError =
+        error.message?.includes('Transaction numbers are only allowed') ||
+        error.code === 20 ||
+        error.codeName === 'IllegalOperation';
+
+      if (isStandaloneError) {
+        // Fallback: execute callback directly without transaction session wrapper
+        return fn(session);
+      }
+      throw error;
+    }
+  };
+
+  return session;
+};
+
 /**
  * Connects to MongoDB using the configured URI.
  * Retries are intentionally NOT implemented here with infinite loops —

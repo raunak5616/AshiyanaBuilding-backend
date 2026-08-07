@@ -88,4 +88,5 @@ process.on('uncaughtException', (error) => {
   process.exit(1);
 });
 
+// Trigger rebuild of dropped indexes with partialFilterExpression
 startServer();
