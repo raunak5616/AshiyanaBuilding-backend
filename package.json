@@ -24,6 +24,9 @@
     "multer": "^2.2.0",
     "zod": "^3.22.4"
   },
+  "overrides": {
+    "tar": "7.5.22"
+  },
   "devDependencies": {
     "nodemon": "^3.1.0"
   }
