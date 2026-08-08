@@ -8,6 +8,7 @@ import { brandRepository } from '../../repositories/brand.repository.js';
 import { unitRepository } from '../../repositories/unit.repository.js';
 import { auditLogRepository } from '../../repositories/auditLog.repository.js';
 import { ApiError } from '../../utils/ApiError.js';
+import { cloudinaryService } from '../../services/cloudinary.service.js';
 
 const sanitizeProduct = (doc) => ({
   id: doc._id,
@@ -136,6 +137,19 @@ const updateProduct = async (shopId, actingUser, productId, payload) => {
   }
 
   const updated = await productRepository.updateById(productId, { shopId }, payload);
+
+  // Clean up orphaned Cloudinary images if images list was updated
+  if (payload.images && before.images) {
+    const oldPublicIds = before.images.map((img) => img.publicId).filter(Boolean);
+    const newPublicIds = new Set(payload.images.map((img) => img.publicId).filter(Boolean));
+    const orphanedPublicIds = oldPublicIds.filter((id) => !newPublicIds.has(id));
+
+    if (orphanedPublicIds.length > 0) {
+      cloudinaryService.deleteMultipleImages(orphanedPublicIds).catch((err) => {
+        console.error('Failed to clean up orphaned Cloudinary images:', err);
+      });
+    }
+  }
 
   const priceChanged =
     (payload.sellingPrice !== undefined && payload.sellingPrice !== before.sellingPrice) ||

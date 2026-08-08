@@ -16,27 +16,29 @@ const seed = async () => {
     await mongoose.connect(dbUri);
     console.log('Connected to:', mongoose.connection.name);
 
-    // 1. Create a Shop
-    const shopId = new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b1c');
-    await Shop.deleteMany({ _id: shopId });
-    const shop = await Shop.create({
-      _id: shopId,
-      name: 'Ashiyana Building Materials',
-      email: 'contact@ashiyana.com',
-      phone: '9876543210',
-      address: {
-        line1: '12, Link Road',
-        line2: 'Industrial Area',
-        city: 'Ranchi',
-        state: 'Jharkhand',
-        pincode: '834001',
-        country: 'India',
-      },
-      currency: 'INR',
-      timezone: 'Asia/Kolkata',
-      isActive: true,
-    });
-    console.log('✅ Shop created:', shop.name, shop._id.toString());
+    // 1. Find the existing Shop (created by bootstrapOwner.js)
+    let shop = await Shop.findOne({});
+    if (!shop) {
+      console.log('No shop found. Creating a default shop...');
+      shop = await Shop.create({
+        name: 'Ashiyana Building Materials',
+        email: 'contact@ashiyana.com',
+        phone: '9876543210',
+        address: {
+          line1: '12, Link Road',
+          line2: 'Industrial Area',
+          city: 'Ranchi',
+          state: 'Jharkhand',
+          pincode: '834001',
+          country: 'India',
+        },
+        currency: 'INR',
+        timezone: 'Asia/Kolkata',
+        isActive: true,
+      });
+    }
+    const shopId = shop._id;
+    console.log('✅ Using Shop:', shop.name, shopId.toString());
 
     // 2. Create Category
     const categoryId = new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b2c');

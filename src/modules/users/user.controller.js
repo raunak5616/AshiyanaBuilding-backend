@@ -108,6 +108,15 @@ const resetPassword = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, result.message));
 });
 
+/**
+ * GET /api/v1/users/roles
+ */
+const listRoles = asyncHandler(async (req, res) => {
+  const roles = await userService.listRoles(req.user.shopId);
+
+  return res.status(200).json(new ApiResponse(200, 'Roles fetched successfully', roles));
+});
+
 export const userController = {
   create,
   list,
@@ -119,4 +128,5 @@ export const userController = {
   deactivate,
   reactivate,
   resetPassword,
+  listRoles,
 };

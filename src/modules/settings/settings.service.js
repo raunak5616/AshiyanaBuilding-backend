@@ -2,6 +2,7 @@ import { shopRepository } from '../../repositories/shop.repository.js';
 import { systemSettingsRepository } from '../../repositories/systemSettings.repository.js';
 import { auditLogRepository } from '../../repositories/auditLog.repository.js';
 import { ApiError } from '../../utils/ApiError.js';
+import { cloudinaryService } from '../../services/cloudinary.service.js';
 
 const sanitizeSettings = (shop, systemSettings) => ({
   shopId: shop._id,
@@ -116,6 +117,13 @@ const updateSettings = async (shopId, actingUserId, payload) => {
   let updatedSettings = systemSettings;
   if (Object.keys(settingsUpdates).length > 0) {
     updatedSettings = await systemSettingsRepository.updateById(systemSettings._id, { shopId }, settingsUpdates);
+  }
+
+  // Clean up old shop logo from Cloudinary if updated
+  if (payload.logo && systemSettings.logo?.publicId && systemSettings.logo.publicId !== payload.logo.publicId) {
+    cloudinaryService.deleteImage(systemSettings.logo.publicId).catch((err) => {
+      console.error('Failed to delete old shop logo from Cloudinary:', err);
+    });
   }
 
   const after = sanitizeSettings(updatedShop, updatedSettings);

@@ -29,6 +29,7 @@ import { ApiError } from './utils/ApiError.js';
 import authRoutes from './modules/auth/auth.routes.js';
 import userRoutes from './modules/users/user.routes.js';
 import productRoutes from './modules/products/product.routes.js';
+import uploadRoutes from './modules/uploads/upload.routes.js';
 import categoryRoutes from './modules/products/category.routes.js';
 import brandRoutes from './modules/products/brand.routes.js';
 import unitRoutes from './modules/products/unit.routes.js';
@@ -157,6 +158,7 @@ const authLimiter = rateLimit({
 app.use(`/api/${env.API_VERSION}/auth`, authLimiter, authRoutes);
 app.use(`/api/${env.API_VERSION}/users`, userRoutes);
 app.use(`/api/${env.API_VERSION}/products`, productRoutes);
+app.use(`/api/${env.API_VERSION}/uploads`, uploadRoutes);
 app.use(`/api/${env.API_VERSION}/categories`, categoryRoutes);
 app.use(`/api/${env.API_VERSION}/brands`, brandRoutes);
 app.use(`/api/${env.API_VERSION}/units`, unitRoutes);

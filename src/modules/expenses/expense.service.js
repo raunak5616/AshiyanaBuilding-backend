@@ -2,6 +2,7 @@ import { expenseRepository } from '../../repositories/expense.repository.js';
 import { expenseCategoryRepository } from '../../repositories/expenseCategory.repository.js';
 import { auditLogRepository } from '../../repositories/auditLog.repository.js';
 import { ApiError } from '../../utils/ApiError.js';
+import { cloudinaryService } from '../../services/cloudinary.service.js';
 
 const sanitize = (doc) => ({
   id: doc._id, shopId: doc.shopId, expenseNumber: doc.expenseNumber, categoryId: doc.categoryId,
@@ -58,6 +59,13 @@ const updateExpense = async (shopId, actingUser, expenseId, payload) => {
   }
 
   const updated = await expenseRepository.updateById(expenseId, { shopId }, payload);
+
+  // Clean up old attachment from Cloudinary if updated
+  if (payload.attachment && before.attachment?.publicId && before.attachment.publicId !== payload.attachment.publicId) {
+    cloudinaryService.deleteImage(before.attachment.publicId).catch((err) => {
+      console.error('Failed to delete old expense attachment from Cloudinary:', err);
+    });
+  }
   await auditLogRepository.create({
     shopId, actorUserId: actingUser.userId, action: 'expense.updated', changes: buildFieldDiff(before, payload),
   });

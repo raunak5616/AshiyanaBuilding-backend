@@ -63,6 +63,10 @@ const composeInventoryRows = async (shopId, products) => {
       currentStock: inv ? inv.currentStock : 0,
       lastMovementAt: inv ? inv.lastMovementAt : null,
       isActive: product.isActive,
+      images: product.images || [],
+      categoryId: product.categoryId ? String(product.categoryId) : null,
+      brandId: product.brandId ? String(product.brandId) : null,
+      unitId: product.unitId ? String(product.unitId) : null,
     };
   });
 };

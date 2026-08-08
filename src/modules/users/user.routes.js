@@ -48,6 +48,13 @@ router.patch(
   userController.updateMe,
 );
 
+router.get(
+  '/roles',
+  authMiddleware,
+  tokenVersionMiddleware,
+  userController.listRoles,
+);
+
 // ---------------------------------------------------------------------------
 // Admin routes — full pipeline, each gated by its specific permission key.
 // ---------------------------------------------------------------------------

@@ -17,6 +17,7 @@ import { userRepository } from '../../repositories/user.repository.js';
 import { roleRepository } from '../../repositories/role.repository.js';
 import { auditLogRepository } from '../../repositories/auditLog.repository.js';
 import { ApiError } from '../../utils/ApiError.js';
+import { cloudinaryService } from '../../services/cloudinary.service.js';
 
 /**
  * Generates a strong temporary password guaranteed to satisfy the same
@@ -219,6 +220,13 @@ const updateProfileAdmin = async (shopId, actingUser, targetUserId, payload) => 
 
   const updated = await userRepository.updateById(targetUserId, { shopId }, payload);
 
+  // Clean up old profile photo from Cloudinary if updated
+  if (payload.profilePhoto && before.profilePhoto?.publicId && before.profilePhoto.publicId !== payload.profilePhoto.publicId) {
+    cloudinaryService.deleteImage(before.profilePhoto.publicId).catch((err) => {
+      console.error('Failed to delete old profile photo from Cloudinary:', err);
+    });
+  }
+
   await auditLogRepository.create({
     shopId,
     actorUserId: actingUser.userId,
@@ -246,6 +254,13 @@ const updateProfileSelf = async (shopId, actingUser, payload) => {
   }
 
   const updated = await userRepository.updateById(actingUser.userId, { shopId }, payload);
+
+  // Clean up old profile photo from Cloudinary if updated
+  if (payload.profilePhoto && before.profilePhoto?.publicId && before.profilePhoto.publicId !== payload.profilePhoto.publicId) {
+    cloudinaryService.deleteImage(before.profilePhoto.publicId).catch((err) => {
+      console.error('Failed to delete old profile photo from Cloudinary:', err);
+    });
+  }
 
   await auditLogRepository.create({
     shopId,
@@ -384,6 +399,23 @@ const resetPassword = async (shopId, actingUser, targetUserId, newPassword) => {
   return { message: 'Password reset successfully' };
 };
 
+/**
+ * Lists all active roles for a shop, excluding the Owner role.
+ * @param {string} shopId
+ * @returns {Promise<object[]>}
+ */
+const listRoles = async (shopId) => {
+  const { items } = await roleRepository.findAll({ shopId }, { limit: 100 });
+  return items
+    .filter((role) => role.slug !== 'owner' && role.isActive)
+    .map((role) => ({
+      id: String(role._id),
+      name: role.name,
+      slug: role.slug,
+      description: role.description,
+    }));
+};
+
 export const userService = {
   createStaff,
   listStaff,
@@ -395,4 +427,5 @@ export const userService = {
   deactivateStaff,
   reactivateStaff,
   resetPassword,
+  listRoles,
 };
