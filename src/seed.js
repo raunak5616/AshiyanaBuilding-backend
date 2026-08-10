@@ -6,6 +6,8 @@ import { Brand } from './models/brand.model.js';
 import { Unit } from './models/unit.model.js';
 import { Product } from './models/product.model.js';
 import { Customer } from './models/customer.model.js';
+import { CustomerCart } from './models/customerCart.model.js';
+import { CustomerWishlist } from './models/customerWishlist.model.js';
 
 const seed = async () => {
   try {
@@ -40,60 +42,269 @@ const seed = async () => {
     const shopId = shop._id;
     console.log('✅ Using Shop:', shop.name, shopId.toString());
 
-    // 2. Create Category
-    const categoryId = new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b2c');
-    await Category.deleteMany({ shopId });
-    const category = await Category.create({
-      _id: categoryId,
-      shopId,
-      name: 'Cement',
-      slug: 'cement',
-      isActive: true,
-    });
-    console.log('✅ Category created:', category.name);
+    // Clear out old customer carts & wishlists to avoid orphaned document/index errors
+    await CustomerCart.deleteMany({});
+    await CustomerWishlist.deleteMany({});
 
-    // 3. Create Brand
-    const brandId = new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b3c');
-    await Brand.deleteMany({ shopId });
-    const brand = await Brand.create({
-      _id: brandId,
-      shopId,
-      name: 'Ultratech',
-      isActive: true,
-    });
-    console.log('✅ Brand created:', brand.name);
+    // 2. Create Categories
+    await Category.deleteMany({});
+    const categories = [
+      {
+        _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b2c'),
+        shopId,
+        name: 'Cement',
+        slug: 'cement',
+        image: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&q=80&w=250',
+        isActive: true,
+      },
+      {
+        _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b2d'),
+        shopId,
+        name: 'Tiling',
+        slug: 'tiling',
+        image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=250',
+        isActive: true,
+      },
+      {
+        _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b2e'),
+        shopId,
+        name: 'Painting',
+        slug: 'painting',
+        image: 'https://images.unsplash.com/photo-1562259949-e8e7689d7828?auto=format&fit=crop&q=80&w=250',
+        isActive: true,
+      },
+      {
+        _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b2f'),
+        shopId,
+        name: 'Water Proofing',
+        slug: 'water-proofing',
+        image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&q=80&w=250',
+        isActive: true,
+      },
+      {
+        _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b20'),
+        shopId,
+        name: 'Plywood & MDF',
+        slug: 'plywood-mdf',
+        image: 'https://images.unsplash.com/photo-1533090161767-e6ffed986c88?auto=format&fit=crop&q=80&w=250',
+        isActive: true,
+      },
+      {
+        _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b21'),
+        shopId,
+        name: 'Wires & Cables',
+        slug: 'wires-cables',
+        image: 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81?auto=format&fit=crop&q=80&w=250',
+        isActive: true,
+      },
+      {
+        _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b22'),
+        shopId,
+        name: 'Switches & Sockets',
+        slug: 'switches-sockets',
+        image: 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&q=80&w=250',
+        isActive: true,
+      },
+      {
+        _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b23'),
+        shopId,
+        name: 'Door Locks',
+        slug: 'door-locks',
+        image: 'https://images.unsplash.com/photo-1517646287270-a5a9ca602e5c?auto=format&fit=crop&q=80&w=250',
+        isActive: true,
+      },
+      {
+        _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b24'),
+        shopId,
+        name: 'CPVC Pipes',
+        slug: 'cpvc-pipes',
+        image: 'https://images.unsplash.com/photo-1542013936693-8848e574047a?auto=format&fit=crop&q=80&w=250',
+        isActive: true,
+      },
+    ];
+    await Category.create(categories);
+    console.log('✅ Categories seeded');
 
-    // 4. Create Unit
-    const unitId = new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b4c');
-    await Unit.deleteMany({ shopId });
-    const unit = await Unit.create({
-      _id: unitId,
-      shopId,
-      name: 'Bag',
-      abbreviation: 'BAG',
-      isActive: true,
-    });
-    console.log('✅ Unit created:', unit.name);
+    // 3. Create Brands
+    await Brand.deleteMany({});
+    const brands = [
+      { _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b3c'), shopId, name: 'Ultratech', isActive: true },
+      { _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b3d'), shopId, name: 'Ambuja', isActive: true },
+      { _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b3e'), shopId, name: 'Kajaria', isActive: true },
+      { _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b3f'), shopId, name: 'Asian Paints', isActive: true },
+      { _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b30'), shopId, name: 'Dr. Fixit', isActive: true },
+      { _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b31'), shopId, name: 'CenturyPly', isActive: true },
+      { _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b32'), shopId, name: 'Polycab', isActive: true },
+      { _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b33'), shopId, name: 'Finolex', isActive: true },
+      { _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b34'), shopId, name: 'Havells', isActive: true },
+      { _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b35'), shopId, name: 'Godrej', isActive: true },
+      { _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b36'), shopId, name: 'Astral', isActive: true },
+    ];
+    await Brand.create(brands);
+    console.log('✅ Brands seeded');
 
-    // 5. Create Product
-    const productId = new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b5c');
-    await Product.deleteMany({ shopId });
-    const product = await Product.create({
-      _id: productId,
-      shopId,
-      name: 'Ultratech Cement (Premium)',
-      sku: 'ULTRA-CEM-001',
-      barcode: '8901234567890',
-      categoryId,
-      brandId,
-      unitId,
-      description: 'Premium grade OPC cement for high strength construction.',
-      purchasePrice: 35000, // 350.00 Rupees (in paise)
-      sellingPrice: 42000, // 420.00 Rupees (in paise)
-      taxRate: 18, // 18% GST
-      isActive: true,
-    });
-    console.log('✅ Product created:', product.name, product._id.toString());
+    // 4. Create Units
+    await Unit.deleteMany({});
+    const units = [
+      { _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b4c'), shopId, name: 'Bag', abbreviation: 'BAG', isActive: true },
+      { _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b4d'), shopId, name: 'Box', abbreviation: 'BOX', isActive: true },
+      { _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b4e'), shopId, name: 'Piece', abbreviation: 'PCS', isActive: true },
+      { _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b4f'), shopId, name: 'Litre', abbreviation: 'LTR', isActive: true },
+      { _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b40'), shopId, name: 'Coil', abbreviation: 'COIL', isActive: true },
+    ];
+    await Unit.create(units);
+    console.log('✅ Units seeded');
+
+    // 5. Create Products
+    await Product.deleteMany({});
+    const products = [
+      {
+        _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b5c'),
+        shopId,
+        name: 'Ultratech Cement (OPC 53)',
+        sku: 'ULTRA-OPC-53',
+        barcode: '8901234567890',
+        categoryId: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b2c'),
+        brandId: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b3c'),
+        unitId: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b4c'),
+        description: 'OPC 53 grade cement for high-strength foundations and structural building.',
+        purchasePrice: 38000,
+        sellingPrice: 44000, // Rs. 440
+        taxRate: 18,
+        images: [{ url: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&q=80&w=400', publicId: 'seed/ultra_cem' }],
+        isActive: true,
+      },
+      {
+        _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b5d'),
+        shopId,
+        name: 'Ambuja Kawach Cement',
+        sku: 'AMBUJA-KAWACH',
+        barcode: '8901234567891',
+        categoryId: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b2c'),
+        brandId: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b3d'),
+        unitId: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b4c'),
+        description: 'Specially formulated water-repellent cement for damp prevention.',
+        purchasePrice: 39000,
+        sellingPrice: 46000, // Rs. 460
+        taxRate: 18,
+        images: [{ url: 'https://images.unsplash.com/photo-1590069261209-f8e9b8642343?auto=format&fit=crop&q=80&w=400', publicId: 'seed/ambuja_cem' }],
+        isActive: true,
+      },
+      {
+        _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b5e'),
+        shopId,
+        name: 'Kajaria Ceramic Floor Tiles',
+        sku: 'KAJARIA-CER-600',
+        barcode: '8901234567892',
+        categoryId: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b2d'),
+        brandId: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b3e'),
+        unitId: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b4d'),
+        description: 'High-quality Kajaria vitrified floor tiles (600x600 mm) with gloss finish.',
+        purchasePrice: 65000,
+        sellingPrice: 78000, // Rs. 780
+        taxRate: 18,
+        images: [{ url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=400', publicId: 'seed/kaj_tile' }],
+        isActive: true,
+      },
+      {
+        _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b5f'),
+        shopId,
+        name: 'Asian Paints Apex Exterior',
+        sku: 'ASIAN-APEX-20L',
+        barcode: '8901234567893',
+        categoryId: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b2e'),
+        brandId: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b3f'),
+        unitId: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b4f'),
+        description: 'Apex weather-proof exterior emulsion white (20 Litre bucket).',
+        purchasePrice: 420000,
+        sellingPrice: 495000, // Rs. 4,950
+        taxRate: 18,
+        images: [{ url: 'https://images.unsplash.com/photo-1562259949-e8e7689d7828?auto=format&fit=crop&q=80&w=400', publicId: 'seed/ap_apex' }],
+        isActive: true,
+      },
+      {
+        _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b60'),
+        shopId,
+        name: 'Dr. Fixit LW+ Waterproofing',
+        sku: 'DFIXIT-LW-5L',
+        barcode: '8901234567894',
+        categoryId: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b2f'),
+        brandId: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b30'),
+        unitId: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b4f'),
+        description: 'Waterproofing liquid additive for concrete mixes (5 Litres).',
+        purchasePrice: 65000,
+        sellingPrice: 82000, // Rs. 820
+        taxRate: 18,
+        images: [{ url: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&q=80&w=400', publicId: 'seed/fixit_lw' }],
+        isActive: true,
+      },
+      {
+        _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b61'),
+        shopId,
+        name: 'CenturyPly Club Prime Plywood',
+        sku: 'CPLY-CLUB-19MM',
+        barcode: '8901234567895',
+        categoryId: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b20'),
+        brandId: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b31'),
+        unitId: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b4e'),
+        description: 'CenturyPly water-proof Club Prime grade boiling water resistant plywood (19mm).',
+        purchasePrice: 120000,
+        sellingPrice: 145000, // Rs. 1,450
+        taxRate: 18,
+        images: [{ url: 'https://images.unsplash.com/photo-1533090161767-e6ffed986c88?auto=format&fit=crop&q=80&w=400', publicId: 'seed/cply_ply' }],
+        isActive: true,
+      },
+      {
+        _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b62'),
+        shopId,
+        name: 'Polycab Maxima+ 1.5 Sqmm Wire',
+        sku: 'POLYCAB-MAX-1.5',
+        barcode: '8901234567896',
+        categoryId: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b21'),
+        brandId: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b32'),
+        unitId: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b40'),
+        description: 'Polycab single core copper wire HR FR-LSH 90m roll (Green).',
+        purchasePrice: 210000,
+        sellingPrice: 245000, // Rs. 2,450
+        taxRate: 18,
+        images: [{ url: 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81?auto=format&fit=crop&q=80&w=400', publicId: 'seed/poly_wire' }],
+        isActive: true,
+      },
+      {
+        _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b63'),
+        shopId,
+        name: 'Havells Crabtree 1-Way Switch',
+        sku: 'HAVELLS-CRAB-1W',
+        barcode: '8901234567897',
+        categoryId: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b22'),
+        brandId: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b34'),
+        unitId: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b4e'),
+        description: 'Modular wall light/fan control switch Crabtree series (White).',
+        purchasePrice: 6500,
+        sellingPrice: 8500, // Rs. 85
+        taxRate: 18,
+        images: [{ url: 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&q=80&w=400', publicId: 'seed/hav_switch' }],
+        isActive: true,
+      },
+      {
+        _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b64'),
+        shopId,
+        name: 'Godrej Ultra XL Door Lock',
+        sku: 'GODREJ-ULTRA-XL',
+        barcode: '8901234567898',
+        categoryId: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b23'),
+        brandId: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b35'),
+        unitId: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b4e'),
+        description: 'Godrej double stroke high security main door lock with keys.',
+        purchasePrice: 145000,
+        sellingPrice: 175000, // Rs. 1,750
+        taxRate: 18,
+        images: [{ url: 'https://images.unsplash.com/photo-1517646287270-a5a9ca602e5c?auto=format&fit=crop&q=80&w=400', publicId: 'seed/god_lock' }],
+        isActive: true,
+      },
+    ];
+    await Product.create(products);
+    console.log('✅ Products seeded');
 
     // 6. Create an ERP Customer profile for quick-link tests
     await Customer.deleteMany({ shopId });

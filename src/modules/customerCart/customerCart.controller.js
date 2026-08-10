@@ -44,7 +44,10 @@ const addToCart = asyncHandler(async (req, res) => {
   }
 
   const cart = await customerCartRepository.findByCustomer(shopId, customerUserId);
-  const existingItem = cart.items.find((item) => String(item.productId._id || item.productId) === productId);
+  const existingItem = cart.items.find((item) => {
+    const id = item.productId?._id || item.productId;
+    return id && String(id) === productId;
+  });
 
   if (existingItem) {
     existingItem.quantity += quantity;
@@ -63,9 +66,10 @@ const removeFromCart = asyncHandler(async (req, res) => {
   const { productId, quantity } = req.body;
 
   const cart = await customerCartRepository.findByCustomer(shopId, customerUserId);
-  const existingItemIndex = cart.items.findIndex(
-    (item) => String(item.productId._id || item.productId) === productId
-  );
+  const existingItemIndex = cart.items.findIndex((item) => {
+    const id = item.productId?._id || item.productId;
+    return id && String(id) === productId;
+  });
 
   if (existingItemIndex === -1) {
     throw ApiError.notFound('Item not found in cart', 'CART_ITEM_NOT_FOUND');
@@ -103,7 +107,10 @@ const addToWishlist = asyncHandler(async (req, res) => {
   }
 
   const wishlist = await customerWishlistRepository.findByCustomer(shopId, customerUserId);
-  const exists = wishlist.products.some((p) => String(p._id || p) === productId);
+  const exists = wishlist.products.some((p) => {
+    const id = p?._id || p;
+    return id && String(id) === productId;
+  });
 
   if (!exists) {
     wishlist.products.push(productId);
@@ -119,7 +126,10 @@ const removeFromWishlist = asyncHandler(async (req, res) => {
   const { productId } = req.params;
 
   const wishlist = await customerWishlistRepository.findByCustomer(shopId, customerUserId);
-  wishlist.products = wishlist.products.filter((p) => String(p._id || p) !== productId);
+  wishlist.products = wishlist.products.filter((p) => {
+    const id = p?._id || p;
+    return !id || String(id) !== productId;
+  });
   await wishlist.save();
   await wishlist.populate('products');
 

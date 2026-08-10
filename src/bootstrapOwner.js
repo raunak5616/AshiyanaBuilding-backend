@@ -26,6 +26,7 @@ const bootstrap = async () => {
 
     console.log('1. Creating Shop...');
     const shop = await Shop.create({
+      _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b1c'),
       name: 'Aashiyana Building Materials',
       email: 'contact@aashiyana.com',
       phone: '9876543210',

@@ -125,7 +125,11 @@ const productSchema = new Schema(
       default: null,
     },
   },
-  { timestamps: true },
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  },
 );
 
 // Core business rule: SKU unique per shop.

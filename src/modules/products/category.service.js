@@ -47,6 +47,7 @@ const sanitizeCategory = (doc) => ({
   name: doc.name,
   slug: doc.slug,
   parentCategoryId: doc.parentCategoryId,
+  image: doc.image || '',
   isActive: doc.isActive,
 });
 
@@ -65,13 +66,14 @@ const createCategory = async (shopId, actingUser, payload) => {
     name: payload.name,
     slug,
     parentCategoryId: payload.parentCategoryId || null,
+    image: payload.image || '',
   });
 
   await auditLogRepository.create({
     shopId,
     actorUserId: actingUser.userId,
     action: 'category.created',
-    changes: { after: { name: payload.name, slug, parentCategoryId: payload.parentCategoryId || null } },
+    changes: { after: { name: payload.name, slug, parentCategoryId: payload.parentCategoryId || null, image: payload.image || '' } },
   });
 
   return sanitizeCategory(category);

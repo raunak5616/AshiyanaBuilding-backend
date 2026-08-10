@@ -36,7 +36,11 @@ const customerCartSchema = new Schema(
     },
     items: [cartItemSchema],
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
 );
 
 customerCartSchema.index({ shopId: 1, customerUserId: 1 });

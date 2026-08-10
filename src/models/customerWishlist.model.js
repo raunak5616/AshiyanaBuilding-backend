@@ -21,7 +21,11 @@ const customerWishlistSchema = new Schema(
       },
     ],
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
 );
 
 customerWishlistSchema.index({ shopId: 1, customerUserId: 1 });

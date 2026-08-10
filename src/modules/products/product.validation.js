@@ -65,6 +65,7 @@ export const createCategorySchema = {
   body: z.object({
     name: z.string().trim().min(1, 'Category name is required'),
     parentCategoryId: objectIdSchema.optional(),
+    image: z.string().trim().optional(),
   }),
 };
 export const updateCategorySchema = {
@@ -72,6 +73,7 @@ export const updateCategorySchema = {
   body: z.object({
     name: z.string().trim().min(1).optional(),
     parentCategoryId: objectIdSchema.optional(),
+    image: z.string().trim().optional(),
   }),
 };
 export const categoryIdParamsSchema = { params: z.object({ id: objectIdSchema }) };

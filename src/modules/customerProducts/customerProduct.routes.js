@@ -21,6 +21,8 @@ const listProductsQuerySchema = {
     search: z.string().trim().optional(),
     page: z.coerce.number().int().positive().default(1),
     limit: z.coerce.number().int().positive().max(100).default(20),
+    sortBy: z.enum(['price', 'name', 'createdAt']).optional(),
+    sortOrder: z.enum(['asc', 'desc']).optional(),
   }),
 };
 
@@ -36,7 +38,7 @@ router.get(
   validate(listProductsQuerySchema),
   asyncHandler(async (req, res) => {
     const { shopId } = req.customer;
-    const { categoryId, brandId, search, page, limit } = req.query;
+    const { categoryId, brandId, search, page, limit, sortBy, sortOrder } = req.query;
 
     const filter = { shopId, isActive: true };
     if (categoryId) filter.categoryId = categoryId;
@@ -46,7 +48,15 @@ router.get(
       filter.$or = [{ name: regex }, { sku: regex }, { barcode: regex }, { description: regex }];
     }
 
-    const { items, total } = await productRepository.findAll(filter, { page, limit });
+    // Handle database sorting
+    let sort = { createdAt: -1 };
+    if (sortBy) {
+      const field = sortBy === 'price' ? 'sellingPrice' : sortBy;
+      const order = sortOrder === 'desc' ? -1 : 1;
+      sort = { [field]: order };
+    }
+
+    const { items, total } = await productRepository.findAll(filter, { page, limit, sort });
 
     // Sanitize product items
     const sanitized = items.map((doc) => ({
@@ -120,6 +130,7 @@ router.get(
       name: c.name,
       slug: c.slug,
       parentCategoryId: c.parentCategoryId,
+      image: c.image || '',
     }));
 
     return res.status(200).json(new ApiResponse(200, 'Categories fetched successfully', sanitized));
