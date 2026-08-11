@@ -7,6 +7,13 @@ export const updateProfileSchema = {
     fullName: z.string().trim().min(2, 'Full name must be at least 2 characters').optional(),
     email: z.string().trim().email('Invalid email address').optional(),
     phone: z.string().trim().min(10, 'Phone must be at least 10 digits').optional(),
+    latitude: z.number().optional(),
+    longitude: z.number().optional(),
+    landmark: z.string().trim().optional(),
+    addressLine: z.string().trim().optional(),
+    city: z.string().trim().optional(),
+    state: z.string().trim().optional(),
+    postalCode: z.string().trim().optional(),
   }),
 };
 
@@ -21,6 +28,9 @@ export const createAddressSchema = {
     postalCode: z.string().trim().min(1, 'Postal code is required'),
     country: z.string().trim().optional().default('India'),
     isDefault: z.boolean().optional().default(false),
+    latitude: z.number().optional(),
+    longitude: z.number().optional(),
+    landmark: z.string().trim().optional(),
   }),
 };
 
@@ -36,6 +46,9 @@ export const updateAddressSchema = {
     postalCode: z.string().trim().min(1).optional(),
     country: z.string().trim().optional(),
     isDefault: z.boolean().optional(),
+    latitude: z.number().optional(),
+    longitude: z.number().optional(),
+    landmark: z.string().trim().optional(),
   }),
 };
 

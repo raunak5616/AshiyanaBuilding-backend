@@ -58,6 +58,16 @@ const customerAddressSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    latitude: {
+      type: Number,
+    },
+    longitude: {
+      type: Number,
+    },
+    landmark: {
+      type: String,
+      trim: true,
+    },
   },
   { timestamps: true }
 );

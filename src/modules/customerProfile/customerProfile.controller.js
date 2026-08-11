@@ -23,6 +23,13 @@ const getProfile = asyncHandler(async (req, res) => {
       phone: customer.phone,
       isActive: customer.isActive,
       createdAt: customer.createdAt,
+      latitude: customer.latitude,
+      longitude: customer.longitude,
+      landmark: customer.landmark,
+      addressLine: customer.addressLine,
+      city: customer.city,
+      state: customer.state,
+      postalCode: customer.postalCode,
     })
   );
 });
@@ -60,6 +67,13 @@ const updateProfile = asyncHandler(async (req, res) => {
       if (fullName) updates.fullName = fullName;
       if (email) updates.email = email.toLowerCase();
       if (phone) updates.phone = phone;
+      if (req.body.latitude !== undefined) updates.latitude = req.body.latitude;
+      if (req.body.longitude !== undefined) updates.longitude = req.body.longitude;
+      if (req.body.landmark !== undefined) updates.landmark = req.body.landmark;
+      if (req.body.addressLine !== undefined) updates.addressLine = req.body.addressLine;
+      if (req.body.city !== undefined) updates.city = req.body.city;
+      if (req.body.state !== undefined) updates.state = req.body.state;
+      if (req.body.postalCode !== undefined) updates.postalCode = req.body.postalCode;
 
       updatedUser = await customerUserRepository.updateById(
         customerUserId,
@@ -97,6 +111,13 @@ const updateProfile = asyncHandler(async (req, res) => {
       phone: updatedUser.phone,
       isActive: updatedUser.isActive,
       updatedAt: updatedUser.updatedAt,
+      latitude: updatedUser.latitude,
+      longitude: updatedUser.longitude,
+      landmark: updatedUser.landmark,
+      addressLine: updatedUser.addressLine,
+      city: updatedUser.city,
+      state: updatedUser.state,
+      postalCode: updatedUser.postalCode,
     })
   );
 });

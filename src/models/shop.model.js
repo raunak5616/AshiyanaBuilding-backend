@@ -22,6 +22,9 @@ const addressSchema = new Schema(
     state: { type: String, trim: true },
     pincode: { type: String, trim: true },
     country: { type: String, trim: true, default: 'India' },
+    latitude: { type: Number },
+    longitude: { type: Number },
+    plusCode: { type: String, trim: true },
   },
   { _id: false },
 );

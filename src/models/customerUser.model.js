@@ -52,6 +52,32 @@ const customerUserSchema = new Schema(
       type: Date,
       default: null,
     },
+    latitude: {
+      type: Number,
+    },
+    longitude: {
+      type: Number,
+    },
+    landmark: {
+      type: String,
+      trim: true,
+    },
+    addressLine: {
+      type: String,
+      trim: true,
+    },
+    city: {
+      type: String,
+      trim: true,
+    },
+    state: {
+      type: String,
+      trim: true,
+    },
+    postalCode: {
+      type: String,
+      trim: true,
+    },
   },
   { timestamps: true }
 );
