@@ -124,7 +124,7 @@ const customerOrderSchema = new Schema(
     },
     paymentStatus: {
       type: String,
-      enum: ['pending', 'paid', 'refunded'],
+      enum: ['pending', 'paid', 'failed', 'refunded'],
       default: 'pending',
     },
     erpSaleId: {

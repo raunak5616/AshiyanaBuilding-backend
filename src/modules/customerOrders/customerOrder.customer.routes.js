@@ -71,7 +71,7 @@ router.get(
     await order.populate('items.productId');
     
     const orderJSON = order.toJSON ? order.toJSON() : order;
-    if (order.paymentMethod === 'online' && order.paymentStatus === 'pending') {
+    if (order.paymentMethod === 'online' && (order.paymentStatus === 'pending' || order.paymentStatus === 'failed')) {
       const protocol = req.protocol;
       const host = req.get('host');
       orderJSON.paymentUrl = `${protocol}://${host}/api/v1/orders/pay/${order._id}`;

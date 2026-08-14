@@ -135,7 +135,7 @@ router.get(
         },
         modal: {
           ondismiss: function() {
-            window.location.href = ${JSON.stringify(fallbackRedirect)} + "?status=cancelled&orderNumber=" + ${JSON.stringify(order.orderNumber)};
+            handlePaymentFailure("User cancelled payment");
           }
         }
       };
@@ -152,7 +152,25 @@ router.get(
 
       rzp.on('payment.failed', function (response){
         showError(response.error.description || "Payment failed.");
+        handlePaymentFailure(response.error.description || "Payment failed");
       });
+
+      function handlePaymentFailure(reason) {
+        fetch('/api/v1/orders/pay/fail', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: ${JSON.stringify(order._id)},
+            reason: reason
+          })
+        })
+        .then(function() {
+          window.location.href = ${JSON.stringify(fallbackRedirect)} + "?status=failed&orderNumber=" + ${JSON.stringify(order.orderNumber)};
+        })
+        .catch(function() {
+          window.location.href = ${JSON.stringify(fallbackRedirect)} + "?status=failed&orderNumber=" + ${JSON.stringify(order.orderNumber)};
+        });
+      }
 
       function retryPayment() {
         document.getElementById('error-box').style.display = 'none';
@@ -235,6 +253,24 @@ router.post(
     await order.save();
 
     return res.status(200).json(new ApiResponse(200, 'Payment verified successfully', order));
+  })
+);
+
+// POST /pay/fail - Marks the order payment status as failed
+router.post(
+  '/fail',
+  asyncHandler(async (req, res) => {
+    const { orderId, reason } = req.body;
+
+    const order = await CustomerOrder.findById(orderId);
+    if (!order) {
+      throw ApiError.notFound('Order not found', 'ORDER_NOT_FOUND');
+    }
+
+    order.paymentStatus = 'failed';
+    await order.save();
+
+    return res.status(200).json(new ApiResponse(200, 'Order marked as payment failed successfully', order));
   })
 );
 
