@@ -1,4 +1,6 @@
 import mongoose from 'mongoose';
+import Razorpay from 'razorpay';
+import { env } from '../../config/env.config.js';
 import { customerOrderRepository } from '../../repositories/customerOrder.repository.js';
 import { customerUserRepository } from '../../repositories/customerUser.repository.js';
 import { productRepository } from '../../repositories/product.repository.js';
@@ -48,6 +50,26 @@ const placeOrder = async (shopId, customer, payload) => {
 
   const orderNumber = 'ORD-' + Date.now() + '-' + Math.floor(1000 + Math.random() * 9000);
 
+  // If online payment is chosen, create the Razorpay order
+  let razorpayOrderId = null;
+  if (paymentMethod === 'online') {
+    try {
+      const rzp = new Razorpay({
+        key_id: env.RAZORPAY_KEY_ID,
+        key_secret: env.RAZORPAY_KEY_SECRET,
+      });
+      const razorpayOrder = await rzp.orders.create({
+        amount: grandTotal, // amount in paise (grandTotal is in paise already!)
+        currency: 'INR',
+        receipt: orderNumber,
+      });
+      razorpayOrderId = razorpayOrder.id;
+    } catch (rzpErr) {
+      console.error('Razorpay order creation failed:', rzpErr);
+      throw ApiError.badRequest('Failed to initialize online payment. Please try again.', 'PAYMENT_INIT_FAILED');
+    }
+  }
+
   const order = await customerOrderRepository.create({
     shopId,
     customerUserId: customer.customerUserId,
@@ -61,6 +83,7 @@ const placeOrder = async (shopId, customer, payload) => {
     paymentMethod,
     paymentStatus: 'pending',
     status: 'pending',
+    razorpayOrderId,
     notes: notes || '',
   });
 
@@ -124,6 +147,11 @@ const approveOrder = async (shopId, actingUser, orderId) => {
 
   if (order.status !== 'pending') {
     throw ApiError.conflict('Only pending orders can be approved', 'ORDER_NOT_APPROVABLE');
+  }
+
+  // Enforce payment check for online orders (can only accept if paid, cash/COD can be accepted immediately)
+  if (order.paymentMethod === 'online' && order.paymentStatus !== 'paid') {
+    throw ApiError.badRequest('Cannot approve online order before payment is completed.', 'PAYMENT_PENDING');
   }
 
   const customerUser = await customerUserRepository.findById(order.customerUserId, { shopId });
@@ -233,9 +261,85 @@ const rejectOrder = async (shopId, actingUser, orderId) => {
   return order;
 };
 
+/**
+ * Marks a customer order as dispatched.
+ */
+const dispatchOrder = async (shopId, actingUser, orderId) => {
+  const order = await customerOrderRepository.findById(orderId, { shopId });
+  if (!order) {
+    throw ApiError.notFound('Order not found', 'ORDER_NOT_FOUND');
+  }
+
+  if (order.status !== 'approved') {
+    throw ApiError.conflict('Only approved orders can be dispatched', 'ORDER_NOT_DISPATCHABLE');
+  }
+
+  order.status = 'dispatched';
+  await order.save();
+
+  // Create customer notification
+  await customerNotificationRepository.create({
+    shopId,
+    customerUserId: order.customerUserId,
+    title: 'Order Dispatched',
+    message: `Your order ${order.orderNumber} has been dispatched. It will reach you soon.`,
+    type: 'order_status',
+  });
+
+  await auditLogRepository.create({
+    shopId,
+    actorUserId: actingUser.userId,
+    action: 'order.dispatched',
+    changes: { after: { orderNumber: order.orderNumber, status: 'dispatched' } },
+  });
+
+  return order;
+};
+
+/**
+ * Marks a customer order as delivered.
+ */
+const deliverOrder = async (shopId, actingUser, orderId) => {
+  const order = await customerOrderRepository.findById(orderId, { shopId });
+  if (!order) {
+    throw ApiError.notFound('Order not found', 'ORDER_NOT_FOUND');
+  }
+
+  if (order.status !== 'dispatched') {
+    throw ApiError.conflict('Only dispatched orders can be marked as delivered', 'ORDER_NOT_DELIVERABLE');
+  }
+
+  order.status = 'delivered';
+  // If payment was COD (cash), mark it as paid now!
+  if (order.paymentMethod === 'cash') {
+    order.paymentStatus = 'paid';
+  }
+  await order.save();
+
+  // Create customer notification
+  await customerNotificationRepository.create({
+    shopId,
+    customerUserId: order.customerUserId,
+    title: 'Order Delivered',
+    message: `Your order ${order.orderNumber} has been delivered successfully. Thank you for shopping with us!`,
+    type: 'order_status',
+  });
+
+  await auditLogRepository.create({
+    shopId,
+    actorUserId: actingUser.userId,
+    action: 'order.delivered',
+    changes: { after: { orderNumber: order.orderNumber, status: 'delivered', paymentStatus: order.paymentStatus } },
+  });
+
+  return order;
+};
+
 export const customerOrderService = {
   placeOrder,
   cancelOrder,
   approveOrder,
   rejectOrder,
+  dispatchOrder,
+  deliverOrder,
 };

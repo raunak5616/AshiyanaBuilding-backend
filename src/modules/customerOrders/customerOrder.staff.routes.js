@@ -89,4 +89,32 @@ router.patch(
   })
 );
 
+// 5. Dispatch order (staff facing)
+router.patch(
+  '/:id/dispatch',
+  requirePermission('sales:create'),
+  validate(orderIdParamsSchema),
+  asyncHandler(async (req, res) => {
+    const { shopId } = req.user;
+    const { id } = req.params;
+
+    const order = await customerOrderService.dispatchOrder(shopId, req.user, id);
+    return res.status(200).json(new ApiResponse(200, 'Order marked as dispatched successfully', order));
+  })
+);
+
+// 6. Deliver order (staff facing)
+router.patch(
+  '/:id/deliver',
+  requirePermission('sales:create'),
+  validate(orderIdParamsSchema),
+  asyncHandler(async (req, res) => {
+    const { shopId } = req.user;
+    const { id } = req.params;
+
+    const order = await customerOrderService.deliverOrder(shopId, req.user, id);
+    return res.status(200).json(new ApiResponse(200, 'Order marked as delivered successfully', order));
+  })
+);
+
 export default router;

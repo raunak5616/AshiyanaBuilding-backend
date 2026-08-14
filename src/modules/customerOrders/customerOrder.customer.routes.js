@@ -20,7 +20,15 @@ router.post(
   asyncHandler(async (req, res) => {
     const { shopId } = req.customer;
     const order = await customerOrderService.placeOrder(shopId, req.customer, req.body);
-    return res.status(201).json(new ApiResponse(201, 'Order placed successfully', order));
+    
+    const orderJSON = order.toJSON ? order.toJSON() : order;
+    if (order.paymentMethod === 'online') {
+      const protocol = req.protocol;
+      const host = req.get('host');
+      orderJSON.paymentUrl = `${protocol}://${host}/api/v1/orders/pay/${order._id}`;
+    }
+    
+    return res.status(201).json(new ApiResponse(201, 'Order placed successfully', orderJSON));
   })
 );
 
@@ -61,7 +69,15 @@ router.get(
     }
 
     await order.populate('items.productId');
-    return res.status(200).json(new ApiResponse(200, 'Order details fetched successfully', order));
+    
+    const orderJSON = order.toJSON ? order.toJSON() : order;
+    if (order.paymentMethod === 'online' && order.paymentStatus === 'pending') {
+      const protocol = req.protocol;
+      const host = req.get('host');
+      orderJSON.paymentUrl = `${protocol}://${host}/api/v1/orders/pay/${order._id}`;
+    }
+    
+    return res.status(200).json(new ApiResponse(200, 'Order details fetched successfully', orderJSON));
   })
 );
 

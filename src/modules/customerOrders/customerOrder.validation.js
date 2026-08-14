@@ -34,7 +34,7 @@ export const orderIdParamsSchema = {
 
 export const listOrdersQuerySchema = {
   query: z.object({
-    status: z.enum(['pending', 'approved', 'cancelled', 'delivered']).optional(),
+    status: z.enum(['pending', 'approved', 'dispatched', 'delivered', 'cancelled']).optional(),
     search: z.string().trim().optional(),
     page: z.coerce.number().int().positive().default(1),
     limit: z.coerce.number().int().positive().max(100).default(20),

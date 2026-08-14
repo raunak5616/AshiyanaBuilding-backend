@@ -105,7 +105,7 @@ const customerOrderSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'approved', 'cancelled', 'delivered'],
+      enum: ['pending', 'approved', 'dispatched', 'delivered', 'cancelled'],
       default: 'pending',
     },
     shippingAddress: {
@@ -130,6 +130,18 @@ const customerOrderSchema = new Schema(
     erpSaleId: {
       type: Schema.Types.ObjectId,
       ref: 'Sale',
+      default: null,
+    },
+    razorpayOrderId: {
+      type: String,
+      default: null,
+    },
+    razorpayPaymentId: {
+      type: String,
+      default: null,
+    },
+    razorpaySignature: {
+      type: String,
       default: null,
     },
     notes: {
