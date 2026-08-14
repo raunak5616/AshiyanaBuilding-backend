@@ -67,7 +67,21 @@ if (isProduction) {
 // ---------------------------------------------------------------------------
 // Security & core middleware
 // ---------------------------------------------------------------------------
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "https://checkout.razorpay.com"],
+        frameSrc: ["'self'", "https://api.razorpay.com", "https://checkout.razorpay.com"],
+        connectSrc: ["'self'", "https://api.razorpay.com", "*"],
+        imgSrc: ["'self'", "data:", "https://*.razorpay.com", "https://img.business.razorpay.com"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        fontSrc: ["'self'", "https:", "data:"],
+      },
+    },
+  })
+);
 const allowedOrigins = env.CLIENT_URL.split(',').map((url) => url.trim());
 app.use(
   cors({

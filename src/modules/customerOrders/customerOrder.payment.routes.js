@@ -104,76 +104,6 @@ router.get(
   </div>
 
   <script>
-    const options = {
-      key: "${env.RAZORPAY_KEY_ID}",
-      amount: ${order.grandTotal},
-      currency: "INR",
-      name: "Ashiyana Building Materials",
-      description: "Order Payment: ${order.orderNumber}",
-      order_id: "${order.razorpayOrderId}",
-      handler: function (response) {
-        verifyPayment(response);
-      },
-      prefill: {
-        name: "${customerName}",
-        contact: "${customerPhone}"
-      },
-      theme: {
-        color: "#f59e0b"
-      },
-      modal: {
-        ondismiss: function() {
-          window.location.href = "${fallbackRedirect}?status=cancelled&orderNumber=${order.orderNumber}";
-        }
-      }
-    };
-
-    const rzp = new Razorpay(options);
-
-    function startPayment() {
-      rzp.open();
-    }
-
-    rzp.on('payment.failed', function (response){
-      document.getElementById('loader').style.display = 'none';
-      const errBox = document.getElementById('error-box');
-      errBox.style.display = 'block';
-      document.getElementById('error-message').innerText = response.error.description || "Payment failed.";
-    });
-
-    function retryPayment() {
-      document.getElementById('error-box').style.display = 'none';
-      document.getElementById('loader').style.display = 'block';
-      startPayment();
-    }
-
-    function verifyPayment(paymentDetails) {
-      document.getElementById('loader').style.display = 'block';
-      document.getElementById('error-box').style.display = 'none';
-
-      fetch('/api/v1/orders/pay/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          orderId: "${order.id}",
-          razorpay_payment_id: paymentDetails.razorpay_payment_id,
-          razorpay_order_id: paymentDetails.razorpay_order_id,
-          razorpay_signature: paymentDetails.razorpay_signature
-        })
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          window.location.href = "${fallbackRedirect}?status=success&orderNumber=${order.orderNumber}";
-        } else {
-          showError(data.message || "Payment verification failed.");
-        }
-      })
-      .catch(err => {
-        showError("Network error. Verification failed.");
-      });
-    }
-
     function showError(msg) {
       document.getElementById('loader').style.display = 'none';
       const errBox = document.getElementById('error-box');
@@ -181,7 +111,89 @@ router.get(
       document.getElementById('error-message').innerText = msg;
     }
 
-    window.onload = startPayment;
+    try {
+      if (typeof Razorpay === 'undefined') {
+        throw new Error("Razorpay SDK is not loaded. Please check your internet connection.");
+      }
+
+      const options = {
+        key: ${JSON.stringify(env.RAZORPAY_KEY_ID)},
+        amount: ${order.grandTotal},
+        currency: "INR",
+        name: "Ashiyana Building Materials",
+        description: ${JSON.stringify("Order Payment: " + order.orderNumber)},
+        order_id: ${JSON.stringify(order.razorpayOrderId || "")},
+        handler: function (response) {
+          verifyPayment(response);
+        },
+        prefill: {
+          name: ${JSON.stringify(customerName)},
+          contact: ${JSON.stringify(customerPhone)}
+        },
+        theme: {
+          color: "#f59e0b"
+        },
+        modal: {
+          ondismiss: function() {
+            window.location.href = ${JSON.stringify(fallbackRedirect)} + "?status=cancelled&orderNumber=" + ${JSON.stringify(order.orderNumber)};
+          }
+        }
+      };
+
+      const rzp = new Razorpay(options);
+
+      function startPayment() {
+        try {
+          rzp.open();
+        } catch (e) {
+          showError("Razorpay open failed: " + e.message);
+        }
+      }
+
+      rzp.on('payment.failed', function (response){
+        showError(response.error.description || "Payment failed.");
+      });
+
+      function retryPayment() {
+        document.getElementById('error-box').style.display = 'none';
+        document.getElementById('loader').style.display = 'block';
+        startPayment();
+      }
+
+      function verifyPayment(paymentDetails) {
+        document.getElementById('loader').style.display = 'block';
+        document.getElementById('error-box').style.display = 'none';
+
+        fetch('/api/v1/orders/pay/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: ${JSON.stringify(order._id)},
+            razorpay_payment_id: paymentDetails.razorpay_payment_id,
+            razorpay_order_id: paymentDetails.razorpay_order_id,
+            razorpay_signature: paymentDetails.razorpay_signature
+          })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            window.location.href = ${JSON.stringify(fallbackRedirect)} + "?status=success&orderNumber=" + ${JSON.stringify(order.orderNumber)};
+          } else {
+            showError(data.message || "Payment verification failed.");
+          }
+        })
+        .catch(err => {
+          showError("Network error. Verification failed.");
+        });
+      }
+
+      // Launch payment immediately and fallback to events
+      startPayment();
+      document.addEventListener("DOMContentLoaded", startPayment);
+      window.onload = startPayment;
+    } catch (err) {
+      showError(err.message);
+    }
   </script>
 </body>
 </html>

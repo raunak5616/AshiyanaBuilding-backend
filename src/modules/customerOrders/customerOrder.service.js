@@ -66,7 +66,8 @@ const placeOrder = async (shopId, customer, payload) => {
       razorpayOrderId = razorpayOrder.id;
     } catch (rzpErr) {
       console.error('Razorpay order creation failed:', rzpErr);
-      throw ApiError.badRequest('Failed to initialize online payment. Please try again.', 'PAYMENT_INIT_FAILED');
+      const errMsg = rzpErr.message || (typeof rzpErr === 'object' ? JSON.stringify(rzpErr) : String(rzpErr));
+      throw ApiError.badRequest(`Failed to initialize online payment: ${errMsg}`, 'PAYMENT_INIT_FAILED');
     }
   }
 
