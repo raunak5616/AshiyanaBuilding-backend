@@ -309,18 +309,32 @@ const seed = async () => {
     await Product.create(products);
     console.log('✅ Products seeded');
 
-    // 6. Create an ERP Customer profile for quick-link tests
-    await Customer.deleteMany({ shopId });
-    const customer = await Customer.create({
-      shopId,
-      customerName: 'Demo Customer',
-      customerCode: 'CUST-000001',
-      customerType: 'individual',
-      email: 'customer@example.com',
-      phone: '9876543210',
-      isActive: true,
+    // Find all linked customer IDs in customerusers to avoid deleting registered app users
+    const customerUsersCol = mongoose.connection.db.collection('customerusers');
+    const appUsers = await customerUsersCol.find({ shopId }).toArray();
+    const linkedCustomerIds = appUsers.map(u => u.customerId).filter(Boolean);
+
+    // Delete only customers that are NOT linked to any app user
+    await Customer.deleteMany({ 
+      shopId, 
+      _id: { $nin: linkedCustomerIds } 
     });
-    console.log('✅ Customer profile created:', customer.customerName, customer.customerCode);
+
+    const customerExists = await Customer.findOne({ shopId, customerCode: 'CUST-000001' });
+    if (!customerExists) {
+      const customer = await Customer.create({
+        shopId,
+        customerName: 'Demo Customer',
+        customerCode: 'CUST-000001',
+        customerType: 'individual',
+        email: 'customer@example.com',
+        phone: '9876543210',
+        isActive: true,
+      });
+      console.log('✅ Customer profile created:', customer.customerName, customer.customerCode);
+    } else {
+      console.log('✅ Demo Customer profile already exists, skipping creation');
+    }
 
     console.log('🎉 Seeding completed successfully!');
     await mongoose.connection.close();

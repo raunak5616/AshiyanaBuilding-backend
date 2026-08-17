@@ -8,7 +8,7 @@ import { cloudinaryService } from '../../services/cloudinary.service.js';
 import { ApiError } from '../../utils/ApiError.js';
 
 // Restrict folder names for structural cleanliness
-const ALLOWED_FOLDERS = ['products', 'categories', 'brands', 'users', 'customers', 'expenses', 'logos'];
+const ALLOWED_FOLDERS = ['products', 'categories', 'brands', 'users', 'customers', 'expenses', 'logos', 'slides'];
 
 /**
  * Uploads a single image to the designated folder

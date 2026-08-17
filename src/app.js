@@ -51,6 +51,7 @@ import customerOrderRoutes from './modules/customerOrders/customerOrder.customer
 import staffOrderRoutes from './modules/customerOrders/customerOrder.staff.routes.js';
 import paymentOrderRoutes from './modules/customerOrders/customerOrder.payment.routes.js';
 import customerNotificationRoutes from './modules/customerNotifications/customerNotification.routes.js';
+import slideRoutes from './modules/slides/slide.routes.js';
 
 // TODO: replace with the real value once package.json / a build-info
 // module exists — hardcoded for now per the exact health-check contract requested.
@@ -193,6 +194,7 @@ app.use(`/api/${env.API_VERSION}/customer`, customerProductRoutes);
 app.use(`/api/${env.API_VERSION}/customer/cart`, customerCartRoutes);
 app.use(`/api/${env.API_VERSION}/customer/orders`, customerOrderRoutes);
 app.use(`/api/${env.API_VERSION}/customer/notifications`, customerNotificationRoutes);
+app.use(`/api/${env.API_VERSION}/slides`, slideRoutes);
 app.use(`/api/${env.API_VERSION}/orders/pay`, paymentOrderRoutes);
 app.use(`/api/${env.API_VERSION}/orders`, staffOrderRoutes);
 

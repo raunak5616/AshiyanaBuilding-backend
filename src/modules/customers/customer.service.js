@@ -3,6 +3,8 @@
  */
 
 import { customerRepository } from '../../repositories/customer.repository.js';
+import { customerUserRepository } from '../../repositories/customerUser.repository.js';
+import { customerRefreshTokenRepository } from '../../repositories/customerRefreshToken.repository.js';
 import { auditLogRepository } from '../../repositories/auditLog.repository.js';
 import { ApiError } from '../../utils/ApiError.js';
 
@@ -75,13 +77,33 @@ const createCustomer = async (shopId, actingUser, payload) => {
 
 const listCustomers = async (shopId, filters) => {
   const { items, total } = await customerRepository.findAllByShop(shopId, filters);
-  return { items: items.map(sanitizeCustomer), total };
+  
+  const customerIds = items.map(item => item._id);
+  const appUsers = await customerUserRepository.model.find({ 
+    shopId,
+    customerId: { $in: customerIds } 
+  });
+  
+  const appUserSet = new Set(appUsers.map(u => String(u.customerId)));
+  
+  const sanitizedItems = items.map(doc => {
+    const customer = sanitizeCustomer(doc);
+    customer.hasAppAccount = appUserSet.has(String(doc._id));
+    return customer;
+  });
+
+  return { items: sanitizedItems, total };
 };
 
 const getCustomerById = async (shopId, customerId) => {
   const customer = await customerRepository.findById(customerId, { shopId });
   if (!customer) throw ApiError.notFound('Customer not found', 'CUSTOMER_NOT_FOUND');
-  return sanitizeCustomer(customer);
+  
+  const appUser = await customerUserRepository.findOne({ shopId, customerId });
+  const sanitized = sanitizeCustomer(customer);
+  sanitized.hasAppAccount = !!appUser;
+  
+  return sanitized;
 };
 
 /**
@@ -151,6 +173,14 @@ const archiveCustomer = async (shopId, actingUser, customerId) => {
   if (!customer.isActive) throw ApiError.conflict('Customer is already archived', 'ALREADY_ARCHIVED');
 
   const updated = await customerRepository.softDelete(customerId, { shopId });
+
+  // Also block linked mobile app user and invalidate sessions
+  const customerUser = await customerUserRepository.findOne({ shopId, customerId });
+  if (customerUser) {
+    await customerUserRepository.updateById(customerUser._id, { shopId }, { isActive: false });
+    await customerRefreshTokenRepository.deleteAllForUser(customerUser._id);
+  }
+
   await auditLogRepository.create({ shopId, actorUserId: actingUser.userId, action: 'customer.archived' });
   return sanitizeCustomer(updated);
 };
@@ -161,6 +191,13 @@ const restoreCustomer = async (shopId, actingUser, customerId) => {
   if (customer.isActive) throw ApiError.conflict('Customer is already active', 'ALREADY_ACTIVE');
 
   const updated = await customerRepository.updateById(customerId, { shopId }, { isActive: true });
+
+  // Also unblock linked mobile app user
+  const customerUser = await customerUserRepository.findOne({ shopId, customerId });
+  if (customerUser) {
+    await customerUserRepository.updateById(customerUser._id, { shopId }, { isActive: true });
+  }
+
   await auditLogRepository.create({ shopId, actorUserId: actingUser.userId, action: 'customer.restored' });
   return sanitizeCustomer(updated);
 };
