@@ -22,6 +22,7 @@ export const placeOrderSchema = {
     items: z.array(orderItemInputSchema).min(1, 'At least one item is required'),
     shippingAddress: shippingAddressSchema,
     paymentMethod: z.enum(['cash', 'online']).default('cash'),
+    useWallet: z.boolean().default(false),
     notes: z.string().trim().optional(),
   }),
 };

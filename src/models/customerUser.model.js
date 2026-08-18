@@ -78,6 +78,15 @@ const customerUserSchema = new Schema(
       type: String,
       trim: true,
     },
+    walletBalance: {
+      type: Number,
+      default: 250000, // Seeded with ₹2,500 for testing & demonstration
+      min: 0,
+    },
+    walletExpiresAt: {
+      type: Date,
+      default: () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Seeded balance expires in 30 days
+    },
   },
   { timestamps: true }
 );
@@ -102,6 +111,19 @@ customerUserSchema.pre('save', async function hashPasswordIfModified(next) {
  */
 customerUserSchema.methods.comparePassword = async function comparePassword(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.passwordHash);
+};
+
+/**
+ * Checks if the wallet balance has expired, resets it if needed, and returns the active balance.
+ * @returns {Promise<number>}
+ */
+customerUserSchema.methods.getActiveWalletBalance = async function getActiveWalletBalance() {
+  if (this.walletExpiresAt && new Date() > this.walletExpiresAt) {
+    this.walletBalance = 0;
+    this.walletExpiresAt = null;
+    await this.save();
+  }
+  return this.walletBalance || 0;
 };
 
 export const CustomerUser = mongoose.model('CustomerUser', customerUserSchema);

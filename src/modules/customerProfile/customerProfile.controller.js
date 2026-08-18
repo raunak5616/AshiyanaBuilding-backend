@@ -13,6 +13,7 @@ const getProfile = asyncHandler(async (req, res) => {
   if (!customer) {
     throw ApiError.notFound('Customer not found', 'CUSTOMER_NOT_FOUND');
   }
+  await customer.getActiveWalletBalance();
   return res.status(200).json(
     new ApiResponse(200, 'Profile fetched successfully', {
       id: customer._id,
@@ -30,6 +31,7 @@ const getProfile = asyncHandler(async (req, res) => {
       city: customer.city,
       state: customer.state,
       postalCode: customer.postalCode,
+      walletBalance: customer.walletBalance,
     })
   );
 });
@@ -101,6 +103,8 @@ const updateProfile = asyncHandler(async (req, res) => {
     await session.endSession();
   }
 
+  await updatedUser.getActiveWalletBalance();
+
   return res.status(200).json(
     new ApiResponse(200, 'Profile updated successfully', {
       id: updatedUser._id,
@@ -118,6 +122,7 @@ const updateProfile = asyncHandler(async (req, res) => {
       city: updatedUser.city,
       state: updatedUser.state,
       postalCode: updatedUser.postalCode,
+      walletBalance: updatedUser.walletBalance,
     })
   );
 });

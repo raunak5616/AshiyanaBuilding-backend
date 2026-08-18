@@ -122,9 +122,14 @@ const customerOrderSchema = new Schema(
       enum: ['cash', 'online'],
       default: 'cash',
     },
+    walletAmountUsed: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     paymentStatus: {
       type: String,
-      enum: ['pending', 'paid', 'failed', 'refunded'],
+      enum: ['pending', 'paid', 'failed'],
       default: 'pending',
     },
     erpSaleId: {

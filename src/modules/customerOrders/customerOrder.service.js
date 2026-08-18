@@ -18,7 +18,7 @@ import { customerNotificationRepository } from '../../repositories/customerNotif
  * @returns {Promise<import('mongoose').Document>}
  */
 const placeOrder = async (shopId, customer, payload) => {
-  const { items: itemsInput, shippingAddress, paymentMethod, notes } = payload;
+  const { items: itemsInput, shippingAddress, paymentMethod, useWallet, notes } = payload;
 
   if (!itemsInput || itemsInput.length === 0) {
     throw ApiError.badRequest('At least one item is required to place an order', 'ORDER_ITEMS_REQUIRED');
@@ -28,10 +28,10 @@ const placeOrder = async (shopId, customer, payload) => {
   for (const item of itemsInput) {
     const product = await productRepository.findById(item.productId, { shopId });
     if (!product || !product.isActive) {
-      throw ApiError.badRequest(`Product not found or inactive: ${item.productId}`, 'PRODUCT_INVALID');
+      throw ApiError.notFound(`Product not found or inactive: ${item.productId}`, 'PRODUCT_NOT_AVAILABLE');
     }
 
-    const unitPrice = product.sellingPrice; // price snapshot in paise
+    const unitPrice = product.sellingPrice;
     const itemTax = Math.round((unitPrice * (product.taxRate || 0)) / 100);
 
     pricedItems.push({
@@ -45,21 +45,47 @@ const placeOrder = async (shopId, customer, payload) => {
 
   const subtotal = pricedItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
   const totalTax = pricedItems.reduce((sum, item) => sum + item.tax, 0);
-  const totalDiscount = pricedItems.reduce((sum, item) => sum + item.discount, 0);
+  
+  // Calculate 2% discount if useWallet is true and subtotal > ₹100 (10000 paise)
+  let totalDiscount = pricedItems.reduce((sum, item) => sum + item.discount, 0);
+  if (useWallet && subtotal > 10000) {
+    const walletDiscount = Math.round(subtotal * 0.02);
+    totalDiscount += walletDiscount;
+  }
+  
   const grandTotal = subtotal + totalTax - totalDiscount;
+
+  // Process wallet deduction
+  let walletAmountUsed = 0;
+  if (useWallet) {
+    const customerUser = await customerUserRepository.findById(customer.customerUserId, { shopId });
+    if (!customerUser) {
+      throw ApiError.notFound('Customer profile not found', 'CUSTOMER_PROFILE_INVALID');
+    }
+    const currentBalance = await customerUser.getActiveWalletBalance();
+    walletAmountUsed = Math.min(currentBalance, grandTotal);
+    
+    if (walletAmountUsed > 0) {
+      customerUser.walletBalance = currentBalance - walletAmountUsed;
+      await customerUser.save();
+    }
+  }
+
+  const remainingAmount = grandTotal - walletAmountUsed;
+  let paymentStatus = remainingAmount === 0 ? 'paid' : 'pending';
 
   const orderNumber = 'ORD-' + Date.now() + '-' + Math.floor(1000 + Math.random() * 9000);
 
-  // If online payment is chosen, create the Razorpay order
+  // If online payment is chosen and there is a remaining amount, create the Razorpay order
   let razorpayOrderId = null;
-  if (paymentMethod === 'online') {
+  if (paymentMethod === 'online' && remainingAmount > 0) {
     try {
       const rzp = new Razorpay({
         key_id: env.RAZORPAY_KEY_ID,
         key_secret: env.RAZORPAY_KEY_SECRET,
       });
       const razorpayOrder = await rzp.orders.create({
-        amount: grandTotal, // amount in paise (grandTotal is in paise already!)
+        amount: remainingAmount, // amount in paise for remaining payment
         currency: 'INR',
         receipt: orderNumber,
       });
@@ -80,9 +106,10 @@ const placeOrder = async (shopId, customer, payload) => {
     tax: totalTax,
     discount: totalDiscount,
     grandTotal,
+    walletAmountUsed,
     shippingAddress,
     paymentMethod,
-    paymentStatus: 'pending',
+    paymentStatus,
     status: 'pending',
     razorpayOrderId,
     notes: notes || '',
