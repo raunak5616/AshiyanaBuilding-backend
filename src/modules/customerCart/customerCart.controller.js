@@ -1,5 +1,4 @@
 import { customerCartRepository } from '../../repositories/customerCart.repository.js';
-import { customerWishlistRepository } from '../../repositories/customerWishlist.repository.js';
 import { productRepository } from '../../repositories/product.repository.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { ApiResponse } from '../../utils/ApiResponse.js';
@@ -88,62 +87,9 @@ const removeFromCart = asyncHandler(async (req, res) => {
 
   return res.status(200).json(new ApiResponse(200, 'Item removed from cart successfully', cart));
 });
-
-// ---- Wishlist Controllers ----
-
-const getWishlist = asyncHandler(async (req, res) => {
-  const { customerUserId, shopId } = req.customer;
-  const wishlist = await customerWishlistRepository.findByCustomer(shopId, customerUserId);
-  return res.status(200).json(new ApiResponse(200, 'Wishlist fetched successfully', wishlist));
-});
-
-const addToWishlist = asyncHandler(async (req, res) => {
-  const { customerUserId, shopId } = req.customer;
-  const { productId } = req.params;
-
-  const product = await productRepository.findById(productId, { shopId });
-  if (!product || !product.isActive) {
-    throw ApiError.badRequest('Product is invalid or inactive', 'PRODUCT_INVALID');
-  }
-
-  const wishlist = await customerWishlistRepository.findByCustomer(shopId, customerUserId);
-  const exists = wishlist.products.some((p) => {
-    const id = p?._id || p;
-    return id && String(id) === productId;
-  });
-
-  if (!exists) {
-    wishlist.products.push(productId);
-    await wishlist.save();
-  }
-  await wishlist.populate('products');
-
-  return res.status(200).json(new ApiResponse(200, 'Product added to wishlist successfully', wishlist));
-});
-
-const removeFromWishlist = asyncHandler(async (req, res) => {
-  const { customerUserId, shopId } = req.customer;
-  const { productId } = req.params;
-
-  const wishlist = await customerWishlistRepository.findByCustomer(shopId, customerUserId);
-  wishlist.products = wishlist.products.filter((p) => {
-    const id = p?._id || p;
-    return !id || String(id) !== productId;
-  });
-  await wishlist.save();
-  await wishlist.populate('products');
-
-  return res.status(200).json(
-    new ApiResponse(200, 'Product removed from wishlist successfully', wishlist)
-  );
-});
-
 export const customerCartController = {
   getCart,
   syncCart,
   addToCart,
   removeFromCart,
-  getWishlist,
-  addToWishlist,
-  removeFromWishlist,
 };

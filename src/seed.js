@@ -7,7 +7,6 @@ import { Unit } from './models/unit.model.js';
 import { Product } from './models/product.model.js';
 import { Customer } from './models/customer.model.js';
 import { CustomerCart } from './models/customerCart.model.js';
-import { CustomerWishlist } from './models/customerWishlist.model.js';
 
 const seed = async () => {
   try {
@@ -45,9 +44,8 @@ const seed = async () => {
     const shopId = shop._id;
     console.log('✅ Using Shop:', shop.name, shopId.toString());
 
-    // Clear out old customer carts & wishlists to avoid orphaned document/index errors
+    // Clear out old customer carts to avoid orphaned document/index errors
     await CustomerCart.deleteMany({});
-    await CustomerWishlist.deleteMany({});
 
     // 2. Create Categories
     await Category.deleteMany({});
