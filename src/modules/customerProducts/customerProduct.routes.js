@@ -128,7 +128,8 @@ router.get(
     const sanitized = await Promise.all(
       categories.map(async (c) => {
         let image = c.image || '';
-        if (!image) {
+        const isSeedImage = image.includes('unsplash.com');
+        if (!image || isSeedImage) {
           // Fallback to the image of any active product in this category
           const product = await productRepository.model.findOne({
             shopId,
@@ -137,7 +138,11 @@ router.get(
             images: { $exists: true, $not: { $size: 0 } },
           });
           if (product && product.images && product.images.length > 0) {
-            image = product.images[0].url;
+            const productImageUrl = product.images[0].url;
+            const isProductCustom = !productImageUrl.includes('unsplash.com');
+            if (isProductCustom || !image) {
+              image = productImageUrl;
+            }
           }
         }
         return {
