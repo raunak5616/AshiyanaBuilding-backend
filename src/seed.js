@@ -119,7 +119,7 @@ const seed = async () => {
         shopId,
         name: 'CPVC Pipes',
         slug: 'cpvc-pipes',
-        image: 'https://images.unsplash.com/photo-1542013936693-8848e574047a?auto=format&fit=crop&q=80&w=250',
+        image: 'https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?auto=format&fit=crop&q=80&w=250',
         isActive: true,
       },
     ];
