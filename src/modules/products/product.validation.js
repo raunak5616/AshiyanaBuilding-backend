@@ -58,7 +58,12 @@ export const updateBrandSchema = {
   }),
 };
 export const brandIdParamsSchema = { params: z.object({ id: objectIdSchema }) };
-export const listBrandsSchema = { query: z.object({ isActive: isActiveQueryTransform }) };
+export const listBrandsSchema = {
+  query: z.object({
+    isActive: isActiveQueryTransform,
+    categoryId: objectIdSchema.optional(),
+  }),
+};
 
 // ---- Category ----
 export const createCategorySchema = {

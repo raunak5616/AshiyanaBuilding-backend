@@ -1,7 +1,4 @@
-/**
- * brand.service.js
- */
-
+import mongoose from 'mongoose';
 import { brandRepository } from '../../repositories/brand.repository.js';
 import { auditLogRepository } from '../../repositories/auditLog.repository.js';
 import { ApiError } from '../../utils/ApiError.js';
@@ -25,7 +22,24 @@ const createBrand = async (shopId, actingUser, payload) => {
 };
 
 const listBrands = async (shopId, filters) => {
-  const { items, total } = await brandRepository.findAllByShop(shopId, filters);
+  const queryFilters = { ...filters };
+  if (queryFilters.categoryId) {
+    const categoryId = queryFilters.categoryId;
+    delete queryFilters.categoryId;
+
+    const productBrandIds = await mongoose.model('Product').distinct('brandId', {
+      shopId,
+      categoryId,
+      isActive: true,
+      brandId: { $ne: null }
+    });
+
+    if (productBrandIds && productBrandIds.length > 0) {
+      queryFilters._id = { $in: productBrandIds };
+    }
+  }
+
+  const { items, total } = await brandRepository.findAllByShop(shopId, queryFilters);
   return { items: items.map(sanitizeBrand), total };
 };
 
