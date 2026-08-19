@@ -48,7 +48,6 @@ const seed = async () => {
     await CustomerCart.deleteMany({});
 
     // 2. Create Categories
-    await Category.deleteMany({});
     const categories = [
       {
         _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b2c'),
@@ -123,11 +122,23 @@ const seed = async () => {
         isActive: true,
       },
     ];
-    await Category.create(categories);
+    for (const catData of categories) {
+      const existing = await Category.findOne({ slug: catData.slug, shopId });
+      if (existing) {
+        const isCustomImage = existing.image && !existing.image.includes('unsplash.com');
+        const updateFields = { ...catData };
+        delete updateFields._id;
+        if (isCustomImage) {
+          delete updateFields.image;
+        }
+        await Category.updateOne({ _id: existing._id }, { $set: updateFields });
+      } else {
+        await Category.create(catData);
+      }
+    }
     console.log('✅ Categories seeded');
 
     // 3. Create Brands
-    await Brand.deleteMany({});
     const brands = [
       { _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b3c'), shopId, name: 'Ultratech', isActive: true },
       { _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b3d'), shopId, name: 'Ambuja', isActive: true },
@@ -141,11 +152,15 @@ const seed = async () => {
       { _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b35'), shopId, name: 'Godrej', isActive: true },
       { _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b36'), shopId, name: 'Astral', isActive: true },
     ];
-    await Brand.create(brands);
+    for (const brandData of brands) {
+      const existing = await Brand.findOne({ name: brandData.name, shopId });
+      if (!existing) {
+        await Brand.create(brandData);
+      }
+    }
     console.log('✅ Brands seeded');
 
     // 4. Create Units
-    await Unit.deleteMany({});
     const units = [
       { _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b4c'), shopId, name: 'Bag', abbreviation: 'BAG', isActive: true },
       { _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b4d'), shopId, name: 'Box', abbreviation: 'BOX', isActive: true },
@@ -153,11 +168,15 @@ const seed = async () => {
       { _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b4f'), shopId, name: 'Litre', abbreviation: 'LTR', isActive: true },
       { _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b40'), shopId, name: 'Coil', abbreviation: 'COIL', isActive: true },
     ];
-    await Unit.create(units);
+    for (const unitData of units) {
+      const existing = await Unit.findOne({ abbreviation: unitData.abbreviation, shopId });
+      if (!existing) {
+        await Unit.create(unitData);
+      }
+    }
     console.log('✅ Units seeded');
 
     // 5. Create Products
-    await Product.deleteMany({});
     const products = [
       {
         _id: new mongoose.Types.ObjectId('60b9f15c7c2b5d4e6f8a9b5c'),
@@ -313,7 +332,20 @@ const seed = async () => {
         isActive: true,
       },
     ];
-    await Product.create(products);
+    for (const productData of products) {
+      const existing = await Product.findOne({ sku: productData.sku, shopId });
+      if (existing) {
+        const isCustomImages = existing.images && existing.images.length > 0 && !existing.images[0].url.includes('unsplash.com');
+        const updateFields = { ...productData };
+        delete updateFields._id;
+        if (isCustomImages) {
+          delete updateFields.images;
+        }
+        await Product.updateOne({ _id: existing._id }, { $set: updateFields });
+      } else {
+        await Product.create(productData);
+      }
+    }
     console.log('✅ Products seeded');
 
     // Find all linked customer IDs in customerusers to avoid deleting registered app users
