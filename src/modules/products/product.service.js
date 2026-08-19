@@ -21,6 +21,7 @@ const sanitizeProduct = (doc) => ({
   unitId: doc.unitId,
   description: doc.description,
   sellingPrice: doc.sellingPrice,
+  mrp: doc.mrp || 0,
   purchasePrice: doc.purchasePrice,
   taxRate: doc.taxRate,
   minimumStock: doc.minimumStock,

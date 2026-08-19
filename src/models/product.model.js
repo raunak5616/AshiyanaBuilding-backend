@@ -88,6 +88,12 @@ const productSchema = new Schema(
       min: [0, 'Selling price cannot be negative'],
       validate: integerCurrencyValidator,
     },
+    mrp: {
+      type: Number,
+      min: [0, 'MRP cannot be negative'],
+      validate: integerCurrencyValidator,
+      default: 0,
+    },
     purchasePrice: {
       type: Number,
       required: [true, 'Purchase price is required'],

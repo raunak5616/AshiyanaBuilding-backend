@@ -125,13 +125,30 @@ router.get(
       .find({ shopId, isActive: true })
       .sort({ name: 1 });
 
-    const sanitized = categories.map((c) => ({
-      id: c._id,
-      name: c.name,
-      slug: c.slug,
-      parentCategoryId: c.parentCategoryId,
-      image: c.image || '',
-    }));
+    const sanitized = await Promise.all(
+      categories.map(async (c) => {
+        let image = c.image || '';
+        if (!image) {
+          // Fallback to the image of any active product in this category
+          const product = await productRepository.model.findOne({
+            shopId,
+            categoryId: c._id,
+            isActive: true,
+            images: { $exists: true, $not: { $size: 0 } },
+          });
+          if (product && product.images && product.images.length > 0) {
+            image = product.images[0].url;
+          }
+        }
+        return {
+          id: c._id,
+          name: c.name,
+          slug: c.slug,
+          parentCategoryId: c.parentCategoryId,
+          image,
+        };
+      })
+    );
 
     return res.status(200).json(new ApiResponse(200, 'Categories fetched successfully', sanitized));
   })

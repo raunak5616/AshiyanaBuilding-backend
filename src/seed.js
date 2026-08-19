@@ -171,6 +171,7 @@ const seed = async () => {
         description: 'OPC 53 grade cement for high-strength foundations and structural building.',
         purchasePrice: 38000,
         sellingPrice: 44000, // Rs. 440
+        mrp: 61100, // Rs. 611
         taxRate: 18,
         images: [{ url: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&q=80&w=400', publicId: 'seed/ultra_cem' }],
         isActive: true,
@@ -187,6 +188,7 @@ const seed = async () => {
         description: 'Specially formulated water-repellent cement for damp prevention.',
         purchasePrice: 39000,
         sellingPrice: 46000, // Rs. 460
+        mrp: 82100, // Rs. 821
         taxRate: 18,
         images: [{ url: 'https://images.unsplash.com/photo-1590069261209-f8e9b8642343?auto=format&fit=crop&q=80&w=400', publicId: 'seed/ambuja_cem' }],
         isActive: true,
@@ -203,6 +205,7 @@ const seed = async () => {
         description: 'High-quality Kajaria vitrified floor tiles (600x600 mm) with gloss finish.',
         purchasePrice: 65000,
         sellingPrice: 78000, // Rs. 780
+        mrp: 95100, // Rs. 951
         taxRate: 18,
         images: [{ url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=400', publicId: 'seed/kaj_tile' }],
         isActive: true,
@@ -219,6 +222,7 @@ const seed = async () => {
         description: 'Apex weather-proof exterior emulsion white (20 Litre bucket).',
         purchasePrice: 420000,
         sellingPrice: 495000, // Rs. 4,950
+        mrp: 883900, // Rs. 8,839
         taxRate: 18,
         images: [{ url: 'https://images.unsplash.com/photo-1562259949-e8e7689d7828?auto=format&fit=crop&q=80&w=400', publicId: 'seed/ap_apex' }],
         isActive: true,
@@ -235,6 +239,7 @@ const seed = async () => {
         description: 'Waterproofing liquid additive for concrete mixes (5 Litres).',
         purchasePrice: 65000,
         sellingPrice: 82000, // Rs. 820
+        mrp: 154700, // Rs. 1,547
         taxRate: 18,
         images: [{ url: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&q=80&w=400', publicId: 'seed/fixit_lw' }],
         isActive: true,
@@ -251,6 +256,7 @@ const seed = async () => {
         description: 'CenturyPly water-proof Club Prime grade boiling water resistant plywood (19mm).',
         purchasePrice: 120000,
         sellingPrice: 145000, // Rs. 1,450
+        mrp: 268500, // Rs. 2,685
         taxRate: 18,
         images: [{ url: 'https://images.unsplash.com/photo-1533090161767-e6ffed986c88?auto=format&fit=crop&q=80&w=400', publicId: 'seed/cply_ply' }],
         isActive: true,
@@ -267,6 +273,7 @@ const seed = async () => {
         description: 'Polycab single core copper wire HR FR-LSH 90m roll (Green).',
         purchasePrice: 210000,
         sellingPrice: 245000, // Rs. 2,450
+        mrp: 350000, // Rs. 3,500
         taxRate: 18,
         images: [{ url: 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81?auto=format&fit=crop&q=80&w=400', publicId: 'seed/poly_wire' }],
         isActive: true,
@@ -283,6 +290,7 @@ const seed = async () => {
         description: 'Modular wall light/fan control switch Crabtree series (White).',
         purchasePrice: 6500,
         sellingPrice: 8500, // Rs. 85
+        mrp: 10000, // Rs. 100
         taxRate: 18,
         images: [{ url: 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&q=80&w=400', publicId: 'seed/hav_switch' }],
         isActive: true,
@@ -299,6 +307,7 @@ const seed = async () => {
         description: 'Godrej double stroke high security main door lock with keys.',
         purchasePrice: 145000,
         sellingPrice: 175000, // Rs. 1,750
+        mrp: 350000, // Rs. 3,500
         taxRate: 18,
         images: [{ url: 'https://images.unsplash.com/photo-1517646287270-a5a9ca602e5c?auto=format&fit=crop&q=80&w=400', publicId: 'seed/god_lock' }],
         isActive: true,
