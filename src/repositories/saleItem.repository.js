@@ -4,9 +4,11 @@ import { SaleItem } from '../models/saleItem.model.js';
 class SaleItemRepository extends BaseRepository {
   constructor() { super(SaleItem); }
 
-  async findAllBySale(shopId, saleId) {
+  async findAllBySale(shopId, saleId, session = null) {
     this._assertShopScope({ shopId });
-    return this.model.find({ shopId, saleId });
+    let q = this.model.find({ shopId, saleId });
+    if (session) q = q.session(session);
+    return q;
   }
 
   async createMany(items, session) {

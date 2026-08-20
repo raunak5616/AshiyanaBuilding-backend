@@ -71,34 +71,43 @@ const validateCustomer = async (shopId, customerId) => {
   if (!customer.isActive) throw ApiError.badRequest('Customer is archived and cannot be used', 'CUSTOMER_INACTIVE');
 };
 
-const createSale = async (shopId, actingUser, payload) => {
+const createSale = async (shopId, actingUser, payload, parentSession = null) => {
   await validateCustomer(shopId, payload.customerId);
 
-  const existingNumber = await saleRepository.findBySaleNumber(shopId, payload.saleNumber);
+  const existingNumber = await saleRepository.findBySaleNumber(shopId, payload.saleNumber, parentSession);
   if (existingNumber) throw ApiError.conflict('Sale number is already in use', 'DUPLICATE_SALE_NUMBER');
 
   const { pricedItems, subtotal } = await validateAndPriceItems(shopId, payload.items);
   const grandTotal = calculateGrandTotal(subtotal, payload);
 
-  const session = await mongoose.startSession();
+  const execute = async (session) => {
+    const sale = await saleRepository.create(
+      {
+        shopId, saleNumber: payload.saleNumber, customerId: payload.customerId || null,
+        saleDate: payload.saleDate, discount: payload.discount || 0, tax: payload.tax || 0,
+        subtotal, grandTotal, notes: payload.notes, status: 'draft', createdBy: actingUser.userId,
+      },
+      session,
+    );
+    const items = await saleItemRepository.createMany(
+      pricedItems.map((i) => ({ ...i, shopId, saleId: sale._id })),
+      session,
+    );
+    return { sale, items };
+  };
+
   let sale, items;
-  try {
-    await session.withTransaction(async () => {
-      sale = await saleRepository.create(
-        {
-          shopId, saleNumber: payload.saleNumber, customerId: payload.customerId || null,
-          saleDate: payload.saleDate, discount: payload.discount || 0, tax: payload.tax || 0,
-          subtotal, grandTotal, notes: payload.notes, status: 'draft', createdBy: actingUser.userId,
-        },
-        session,
-      );
-      items = await saleItemRepository.createMany(
-        pricedItems.map((i) => ({ ...i, shopId, saleId: sale._id })),
-        session,
-      );
-    });
-  } finally {
-    await session.endSession();
+  if (parentSession) {
+    ({ sale, items } = await execute(parentSession));
+  } else {
+    const session = await mongoose.startSession();
+    try {
+      await session.withTransaction(async () => {
+        ({ sale, items } = await execute(session));
+      });
+    } finally {
+      await session.endSession();
+    }
   }
 
   await auditLogRepository.create({
@@ -176,35 +185,43 @@ const updateSale = async (shopId, actingUser, saleId, payload) => {
  * the whole transaction rolls back — no partial stock decrease, no
  * status change.
  */
-const completeSale = async (shopId, actingUser, saleId) => {
-  const sale = await saleRepository.findById(saleId, { shopId });
+const completeSale = async (shopId, actingUser, saleId, parentSession = null) => {
+  const sale = await saleRepository.findById(saleId, { shopId }, null, parentSession);
   if (!sale) throw ApiError.notFound('Sale not found', 'SALE_NOT_FOUND');
   if (sale.status !== 'draft') throw ApiError.conflict('Only draft sales can be completed', 'SALE_NOT_COMPLETABLE');
 
-  const items = await saleItemRepository.findAllBySale(shopId, saleId);
+  const items = await saleItemRepository.findAllBySale(shopId, saleId, parentSession);
   if (items.length === 0) throw ApiError.conflict('Cannot complete a sale with no line items', 'SALE_HAS_NO_ITEMS');
 
-  const session = await mongoose.startSession();
-  let updatedSale;
-  try {
-    await session.withTransaction(async () => {
-      for (const item of items) {
-        // eslint-disable-next-line no-await-in-loop
-        const result = await inventoryService.issueStock(
-          shopId, actingUser, item.productId, item.quantity,
-          { type: 'sale', id: saleId }, session,
+  const execute = async (session) => {
+    for (const item of items) {
+      // eslint-disable-next-line no-await-in-loop
+      const result = await inventoryService.issueStock(
+        shopId, actingUser, item.productId, item.quantity,
+        { type: 'sale', id: saleId }, session,
+      );
+      if (!result) {
+        throw ApiError.conflict(
+          `Insufficient stock for product ${item.productId}`,
+          'INSUFFICIENT_STOCK',
         );
-        if (!result) {
-          throw ApiError.conflict(
-            `Insufficient stock for product ${item.productId}`,
-            'INSUFFICIENT_STOCK',
-          );
-        }
       }
-      updatedSale = await saleRepository.updateById(saleId, { shopId }, { status: 'completed' }, session);
-    });
-  } finally {
-    await session.endSession();
+    }
+    return saleRepository.updateById(saleId, { shopId }, { status: 'completed' }, session);
+  };
+
+  let updatedSale;
+  if (parentSession) {
+    updatedSale = await execute(parentSession);
+  } else {
+    const session = await mongoose.startSession();
+    try {
+      await session.withTransaction(async () => {
+        updatedSale = await execute(session);
+      });
+    } finally {
+      await session.endSession();
+    }
   }
 
   await auditLogRepository.create({

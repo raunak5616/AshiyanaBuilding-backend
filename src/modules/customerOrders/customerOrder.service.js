@@ -212,11 +212,11 @@ const approveOrder = async (shopId, actingUser, orderId) => {
   try {
     await session.withTransaction(async () => {
       // 1. Create ERP sale invoice in draft status
-      const saleResult = await saleService.createSale(shopId, actingUser, salePayload);
+      const saleResult = await saleService.createSale(shopId, actingUser, salePayload, session);
 
       // 2. Complete sale (decreases stock, writes stock ledgers)
       // If stock check fails inside completeSale, it throws INSUFFICIENT_STOCK and rolls back
-      completedSale = await saleService.completeSale(shopId, actingUser, saleResult.id);
+      completedSale = await saleService.completeSale(shopId, actingUser, saleResult.id, session);
 
       // 3. Update Order status and link to ERP Sale
       order.status = 'approved';

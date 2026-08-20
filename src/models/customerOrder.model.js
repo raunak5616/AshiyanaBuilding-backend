@@ -155,7 +155,11 @@ const customerOrderSchema = new Schema(
       default: '',
     },
   },
-  { timestamps: true }
+  { 
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+  }
 );
 
 customerOrderSchema.index({ shopId: 1, orderNumber: 1 }, { unique: true });

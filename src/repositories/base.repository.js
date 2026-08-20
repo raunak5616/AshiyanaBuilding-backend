@@ -63,20 +63,25 @@ export class BaseRepository {
    * @param {object} [projection]
    * @returns {Promise<import('mongoose').Document|null>}
    */
-  async findById(id, filter = {}, projection = null) {
+  async findById(id, filter = {}, projection = null, session = null) {
     const query = { _id: id, ...filter };
     this._assertShopScope(query);
-    return this.model.findOne(query, projection);
+    let q = this.model.findOne(query, projection);
+    if (session) q = q.session(session);
+    return q;
   }
 
   /**
    * @param {object} filter
    * @param {object} [projection]
+   * @param {import('mongoose').ClientSession} [session]
    * @returns {Promise<import('mongoose').Document|null>}
    */
-  async findOne(filter, projection = null) {
+  async findOne(filter, projection = null, session = null) {
     this._assertShopScope(filter);
-    return this.model.findOne(filter, projection);
+    let q = this.model.findOne(filter, projection);
+    if (session) q = q.session(session);
+    return q;
   }
 
   /**

@@ -12,8 +12,8 @@ class SaleRepository extends BaseRepository {
     return this.findAll(filter, { page, limit, sort: { saleDate: -1 } });
   }
 
-  async findBySaleNumber(shopId, saleNumber) {
-    return this.findOne({ shopId, saleNumber: saleNumber.toUpperCase() });
+  async findBySaleNumber(shopId, saleNumber, session = null) {
+    return this.findOne({ shopId, saleNumber: saleNumber.toUpperCase() }, null, session);
   }
 }
 
